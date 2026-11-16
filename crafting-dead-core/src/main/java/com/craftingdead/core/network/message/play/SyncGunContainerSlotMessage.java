@@ -24,7 +24,7 @@ import com.craftingdead.core.world.item.gun.Gun;
 import io.netty.buffer.Unpooled;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 public record SyncGunContainerSlotMessage(int entityId, int slot, FriendlyByteBuf data) {
 
@@ -49,9 +49,9 @@ public record SyncGunContainerSlotMessage(int entityId, int slot, FriendlyByteBu
         new FriendlyByteBuf(Unpooled.wrappedBuffer(data)));
   }
 
-  public boolean handle(Supplier<NetworkEvent.Context> ctx) {
-    ctx.get().enqueueWork(() -> NetworkUtil.getEntity(
-        ctx.get(), this.entityId, Player.class).inventoryMenu.getSlot(this.slot).getItem()
+  public boolean handle(CustomPayloadEvent.Context ctx) {
+    ctx.enqueueWork(() -> NetworkUtil.getEntity(
+        ctx, this.entityId, Player.class).inventoryMenu.getSlot(this.slot).getItem()
             .getCapability(Gun.CAPABILITY)
             .ifPresent(gun -> gun.decode(this.data)));
     return true;

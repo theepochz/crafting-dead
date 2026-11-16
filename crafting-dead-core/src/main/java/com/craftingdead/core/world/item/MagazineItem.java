@@ -18,6 +18,8 @@
 
 package com.craftingdead.core.world.item;
 
+import net.minecraft.network.chat.Component;
+
 import com.craftingdead.core.capability.CapabilityUtil;
 import com.craftingdead.core.world.item.gun.magazine.Magazine;
 import com.craftingdead.core.world.item.gun.magazine.MagazineImpl;
@@ -26,9 +28,6 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -57,7 +56,7 @@ public class MagazineItem extends Item {
   }
 
   @Override
-  public ICapabilityProvider initCapabilities(ItemStack itemStack, @Nullable CompoundTag nbt) {
+  public ICapabilityProvider getCapabilityProvider(ItemStack itemStack) {
     return CapabilityUtil.serializableProvider(() -> new MagazineImpl(this), Magazine.CAPABILITY);
   }
 
@@ -67,33 +66,24 @@ public class MagazineItem extends Item {
         || super.isValidRepairItem(itemStack, materialStack);
   }
 
-  @Override
+  /**
+   * 1.21: item damage is stored on the stack ({@code DataComponents#DAMAGE}); keep these as
+   * plain bridge helpers used by the magazine capability.
+   */
   public int getMaxDamage(ItemStack itemStack) {
     return this.size;
   }
 
-  @Override
   public int getDamage(ItemStack itemStack) {
-    return this.size - itemStack
-        .getCapability(Magazine.CAPABILITY)
-        .map(Magazine::getSize)
-        .orElse(this.size);
+    return itemStack.getDamageValue();
   }
 
-  @Override
   public void setDamage(ItemStack itemStack, int damage) {
-    itemStack
-        .getCapability(Magazine.CAPABILITY)
-        .ifPresent(magazine -> magazine.setSize(Math.max(0, this.size - damage)));
+    itemStack.setDamageValue(damage);
   }
 
   @Override
-  public boolean canBeDepleted() {
-    return true;
-  }
-
-  @Override
-  public void appendHoverText(ItemStack stack, Level level, List<Component> lines,
+  public void appendHoverText(ItemStack stack, Item.TooltipContext level, List<Component> lines,
       TooltipFlag tooltipFlag) {
     super.appendHoverText(stack, level, lines, tooltipFlag);
 
@@ -102,43 +92,19 @@ public class MagazineItem extends Item {
       int currentAmount =
           stack.getCapability(Magazine.CAPABILITY).map(Magazine::getSize).orElse(0);
 
-      Component amountText = new TextComponent(currentAmount + "/" + this.getSize())
+      Component amountText = Component.literal(currentAmount + "/" + this.getSize())
           .withStyle(ChatFormatting.RED);
 
-      lines.add(new TranslatableComponent("magazine.amount")
+      lines.add(Component.translatable("magazine.amount")
           .withStyle(ChatFormatting.GRAY)
           .append(amountText));
     }
 
     if (this.armorPenetration > 0) {
-      lines.add(new TranslatableComponent("magazine.armor_penetration")
+      lines.add(Component.translatable("magazine.armor_penetration")
           .withStyle(ChatFormatting.GRAY)
-          .append(new TextComponent(String.format("%.0f%%", this.armorPenetration))
+          .append(Component.literal(String.format("%.0f%%", this.armorPenetration))
               .withStyle(ChatFormatting.RED)));
-    }
-  }
-
-  @Override
-  public CompoundTag getShareTag(ItemStack itemStack) {
-    CompoundTag nbt = super.getShareTag(itemStack);
-    if (nbt == null) {
-      nbt = new CompoundTag();
-    }
-    CompoundTag magazineNbt = itemStack.getCapability(Magazine.CAPABILITY)
-        .map(INBTSerializable::serializeNBT)
-        .orElse(null);
-    if (magazineNbt != null && !magazineNbt.isEmpty()) {
-      nbt.put("magazine", magazineNbt);
-    }
-    return nbt;
-  }
-
-  @Override
-  public void readShareTag(ItemStack itemStack, @Nullable CompoundTag nbt) {
-    super.readShareTag(itemStack, nbt);
-    if (nbt != null && nbt.contains("magazine", Tag.TAG_COMPOUND)) {
-      itemStack.getCapability(Magazine.CAPABILITY)
-          .ifPresent(magazine -> magazine.deserializeNBT(nbt.getCompound("magazine")));
     }
   }
 

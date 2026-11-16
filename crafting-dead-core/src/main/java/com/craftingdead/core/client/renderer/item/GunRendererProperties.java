@@ -26,9 +26,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import com.craftingdead.core.client.util.RenderUtil;
 import com.mojang.datafixers.util.Pair;
-import com.mojang.math.Quaternion;
+import org.joml.Quaternionf;
 import com.mojang.math.Transformation;
-import com.mojang.math.Vector3f;
+import org.joml.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -49,11 +49,13 @@ public record GunRendererProperties(
   private static final Transformation DEFAULT_SPRINTING_TRANSFORM =
       new Transformation(
           new Vector3f(-0.3F, 0.0F, 0.15F),
-          new Quaternion(-20, 40, 0, true),
+          new org.joml.Quaternionf().rotationXYZ(
+              (float) Math.toRadians(-20), (float) Math.toRadians(40), 0.0F),
           new Vector3f(1.0F, 1.0F, 1.0F),
           null);
 
-  public static final Codec<GunRendererProperties> CODEC =
+  public static final com.mojang.serialization.MapCodec<GunRendererProperties> CODEC =
+      com.mojang.serialization.MapCodec.assumeMapUnsafe(
       RecordCodecBuilder.create(instance -> instance
           .group(
               ResourceLocation.CODEC
@@ -93,7 +95,7 @@ public record GunRendererProperties(
               Codec.compoundList(ResourceLocation.CODEC, RenderUtil.TRANSFORMATION_MATRIX_CODEC)
                   .optionalFieldOf("iron_sights", Collections.emptyList())
                   .forGetter(GunRendererProperties::ironSights))
-          .apply(instance, GunRendererProperties::new));
+          .apply(instance, GunRendererProperties::new)));
 
   @Override
   public ItemRendererType<?, ?> getItemRendererType() {
@@ -108,7 +110,7 @@ public record GunRendererProperties(
     AIMING_LEFT_HANDED("aiming_left_handed");
 
     public static final Codec<HandTransform> CODEC =
-        StringRepresentable.fromEnum(HandTransform::values, HandTransform::byName);
+        StringRepresentable.fromEnum(HandTransform::values);
     private static final Map<String, HandTransform> BY_NAME = Arrays.stream(values())
         .collect(Collectors.toMap(HandTransform::getSerializedName, Function.identity()));
 

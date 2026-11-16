@@ -20,11 +20,13 @@ package com.craftingdead.core.world.item.gun.magazine;
 
 import com.craftingdead.core.network.Synched;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.common.util.INBTSerializable;
 
+@AutoRegisterCapability
 public interface Magazine extends INBTSerializable<CompoundTag>, Synched {
   
   Capability<Magazine> CAPABILITY = CapabilityManager.get(new CapabilityToken<>() {});

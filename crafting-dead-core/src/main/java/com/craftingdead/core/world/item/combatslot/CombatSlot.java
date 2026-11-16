@@ -43,7 +43,7 @@ public enum CombatSlot implements CombatSlotProvider, StringRepresentable {
   EXTRA("extra", false);
 
   public static final Codec<CombatSlot> CODEC =
-      StringRepresentable.fromEnum(CombatSlot::values, CombatSlot::byName);
+      StringRepresentable.fromEnum(CombatSlot::values);
   private static final Map<String, CombatSlot> BY_NAME = Arrays.stream(values())
       .collect(Collectors.toMap(CombatSlot::getSerializedName, Function.identity()));
 

@@ -53,11 +53,14 @@ public class DecoyGrenadeEntity extends Grenade {
     this.gunProperties = this.getRandomProperties();
   }
 
+  @SuppressWarnings("deprecation")
   private Holder<GunConfiguration> getRandomProperties() {
-    return this.level.registryAccess()
-        .registryOrThrow(GunConfigurations.REGISTRY_KEY)
-        .getRandom(this.random)
-        .get();
+    var registry = GunConfigurations.registry.get();
+    if (registry.getValues().isEmpty()) {
+      return Holder.direct(GunConfigurations.M4A1.get());
+    }
+    var values = com.google.common.collect.Lists.newArrayList(registry.getValues());
+    return Holder.direct(values.get(this.random.nextInt(values.size())));
   }
 
   @Override
@@ -70,11 +73,11 @@ public class DecoyGrenadeEntity extends Grenade {
   @Override
   public void activatedChanged(boolean activated) {
     if (!activated) {
-      if (!this.level.isClientSide()) {
+      if (!this.level().isClientSide()) {
         this.kill();
-        this.level.explode(this, this.createDamageSource(), null,
+        this.level().explode(this, this.createDamageSource(), null,
             this.getX(), this.getY() + this.getBbHeight(), this.getZ(), 1.3F, false,
-            Explosion.BlockInteraction.NONE);
+            Level.ExplosionInteraction.NONE);
       }
     } else {
       this.playFakeShoot();
@@ -93,12 +96,12 @@ public class DecoyGrenadeEntity extends Grenade {
       return;
     }
 
-    if (!this.level.isClientSide()) {
+    if (!this.level().isClientSide()) {
       if (this.random.nextInt(20) == 0 && this.canShoot()) {
         this.playFakeShoot();
       }
     } else {
-      this.level.addParticle(ParticleTypes.SMOKE, true, this.getX(),
+      this.level().addParticle(ParticleTypes.SMOKE, true, this.getX(),
           this.getY() + 0.4D, this.getZ(), 0, 0, 0);
     }
   }

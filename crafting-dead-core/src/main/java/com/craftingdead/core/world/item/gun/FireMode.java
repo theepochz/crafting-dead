@@ -37,7 +37,7 @@ public enum FireMode implements StringRepresentable {
   SEMI("semi", () -> 1);
 
   public static final Codec<FireMode> CODEC =
-      StringRepresentable.fromEnum(FireMode::values, FireMode::byName);
+      StringRepresentable.fromEnum(FireMode::values);
   private static final Map<String, FireMode> BY_NAME = Arrays.stream(values())
       .collect(Collectors.toMap(FireMode::getSerializedName, Function.identity()));
 

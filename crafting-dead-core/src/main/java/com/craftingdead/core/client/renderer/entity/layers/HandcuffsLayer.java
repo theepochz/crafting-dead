@@ -18,11 +18,13 @@
 
 package com.craftingdead.core.client.renderer.entity.layers;
 
+import com.mojang.math.Axis;
+
 import com.craftingdead.core.CraftingDead;
 import com.craftingdead.core.client.model.geom.ModModelLayers;
 import com.craftingdead.core.world.entity.extension.PlayerExtension;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Vector3f;
+import org.joml.Vector3f;
 import net.minecraft.client.model.ArmedModel;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.EntityModelSet;
@@ -44,7 +46,7 @@ public class HandcuffsLayer<T extends Player, M extends EntityModel<T> & ArmedMo
     extends RenderLayer<T, M> {
 
   private static final ResourceLocation TEXTURE_LOCATION =
-      new ResourceLocation(CraftingDead.ID, "textures/entity/handcuffs.png");
+      ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "textures/entity/handcuffs.png");
 
   private final ModelPart left;
   private final ModelPart right;
@@ -74,7 +76,7 @@ public class HandcuffsLayer<T extends Player, M extends EntityModel<T> & ArmedMo
         poseStack.pushPose();
         {
           this.getParentModel().translateToHand(HumanoidArm.RIGHT, poseStack);
-          poseStack.mulPose(Vector3f.XP.rotationDegrees(90.0F));
+          poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
           poseStack.translate(-0.32D, -0.06D, -0.4D);
           this.right.render(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY);
         }
@@ -83,7 +85,7 @@ public class HandcuffsLayer<T extends Player, M extends EntityModel<T> & ArmedMo
         poseStack.pushPose();
         {
           this.getParentModel().translateToHand(HumanoidArm.LEFT, poseStack);
-          poseStack.mulPose(Vector3f.XP.rotationDegrees(90.0F));
+          poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
           poseStack.translate(0.07D, -0.06D, -0.4D);
           this.left.render(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY);
         }

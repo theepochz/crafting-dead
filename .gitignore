@@ -11,3 +11,7 @@
 /crafting-dead-decoration/.vscode
 /crafting-dead-survival/.vscode
 *.md
+build-log.txt
+core-build-log.txt
+core-build2.log
+/crafting-dead-decoration/.gradle

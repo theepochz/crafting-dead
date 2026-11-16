@@ -18,6 +18,8 @@
 
 package com.craftingdead.core.world.entity.extension;
 
+import net.minecraft.network.chat.Component;
+
 import com.craftingdead.core.event.OpenCraftingMenuEvent;
 import com.craftingdead.core.event.OpenEquipmentMenuEvent;
 import com.craftingdead.core.network.NetworkChannel;
@@ -31,10 +33,10 @@ import java.util.Collection;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.server.level.ServerPlayer;
@@ -199,8 +201,7 @@ final class PlayerExtensionImpl<E extends Player>
   @Override
   public void setCombatModeEnabled(boolean combatModeEnabled) {
     if (this.level().isClientSide() && combatModeEnabled != this.isCombatModeEnabled()) {
-      NetworkChannel.PLAY.getSimpleChannel().sendToServer(
-          new EnableCombatModeMessage(combatModeEnabled));
+      NetworkChannel.PLAY.getSimpleChannel().send(new EnableCombatModeMessage(combatModeEnabled), net.minecraftforge.network.PacketDistributor.SERVER.noArg());
     } else {
       this.data.set(COMBAT_MODE_ENABLED, combatModeEnabled);
     }
@@ -213,7 +214,7 @@ final class PlayerExtensionImpl<E extends Player>
     }
     this.entity().openMenu(new SimpleMenuProvider(
         (windowId, inventory, player) -> new EquipmentMenu(windowId, this),
-        new TranslatableComponent("container.equipment")));
+        Component.translatable("container.equipment")));
   }
 
   @Override
@@ -223,7 +224,7 @@ final class PlayerExtensionImpl<E extends Player>
     }
     this.entity().openMenu(new SimpleMenuProvider(
         (windowId, inventory, player) -> new CraftingMenu(windowId, this),
-        new TranslatableComponent("container.crafting")));
+        Component.translatable("container.crafting")));
   }
 
   @Override
@@ -284,17 +285,20 @@ final class PlayerExtensionImpl<E extends Player>
   }
 
   @Override
-  public CompoundTag serializeNBT() {
-    var tag = super.serializeNBT();
-    tag.put("handcuffs", this.getHandcuffs().serializeNBT());
+  public CompoundTag serializeNBT(HolderLookup.Provider provider) {
+    var tag = super.serializeNBT(provider);
+    var handcuffs = this.getHandcuffs();
+    if (!handcuffs.isEmpty()) {
+      tag.put("handcuffs", handcuffs.save(provider));
+    }
     return tag;
   }
 
   @Override
-  public void deserializeNBT(CompoundTag tag) {
-    super.deserializeNBT(tag);
+  public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
+    super.deserializeNBT(provider, tag);
     if (tag.contains("handcuffs", Tag.TAG_COMPOUND)) {
-      this.setHandcuffs(ItemStack.of(tag.getCompound("handcuffs")));
+      this.setHandcuffs(ItemStack.parseOptional(provider, tag.getCompound("handcuffs")));
     }
   }
 

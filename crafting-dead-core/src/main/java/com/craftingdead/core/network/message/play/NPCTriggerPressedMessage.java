@@ -22,7 +22,7 @@ import com.craftingdead.core.network.NetworkUtil;
 import com.craftingdead.core.world.entity.extension.LivingExtension;
 import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent.Context;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 public record NPCTriggerPressedMessage(int entityId, boolean triggerPressed) {
 
@@ -35,12 +35,12 @@ public record NPCTriggerPressedMessage(int entityId, boolean triggerPressed) {
     return new NPCTriggerPressedMessage(in.readVarInt(), in.readBoolean());
   }
 
-  public boolean handle(Supplier<Context> ctx) {
-    ctx.get().enqueueWork(() -> NetworkUtil.getEntityOrSender(ctx.get(), this.entityId)
+  public boolean handle(CustomPayloadEvent.Context ctx) {
+    ctx.enqueueWork(() -> NetworkUtil.getEntityOrSender(ctx, this.entityId)
         .getCapability(LivingExtension.CAPABILITY)
         .ifPresent(extension -> extension.mainHandGun()
             .ifPresent(gun -> gun.setNPCTriggerPressed(extension, this.triggerPressed,
-                ctx.get().getDirection().getReceptionSide().isServer(), 0))));
+                ctx.isServerSide(), 0))));
     return true;
   }
 }

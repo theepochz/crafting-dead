@@ -26,9 +26,9 @@ public class ItemRendererType<I extends Item, P extends ItemRendererProperties> 
 
   private final BiFunction<I, P, CustomItemRenderer> factory;
   private final Class<I> itemType;
-  private final Codec<P> propertiesCodec;
+  private final com.mojang.serialization.MapCodec<P> propertiesCodec;
 
-  public ItemRendererType(Class<I> itemType, Codec<P> propertiesCodec,
+  public ItemRendererType(Class<I> itemType, com.mojang.serialization.MapCodec<P> propertiesCodec,
       BiFunction<I, P, CustomItemRenderer> factory) {
     this.itemType = itemType;
     this.propertiesCodec = propertiesCodec;
@@ -43,7 +43,7 @@ public class ItemRendererType<I extends Item, P extends ItemRendererProperties> 
     return this.itemType;
   }
 
-  public Codec<? extends ItemRendererProperties> getPropertiesCodec() {
+  public com.mojang.serialization.MapCodec<? extends ItemRendererProperties> getPropertiesCodec() {
     return this.propertiesCodec;
   }
 }

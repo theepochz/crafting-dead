@@ -18,18 +18,18 @@
 
 package com.craftingdead.core.world.item;
 
+import net.minecraft.network.chat.Component;
+
 import java.util.List;
 import com.craftingdead.core.world.item.equipment.Equipment;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Multimap;
 import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
@@ -40,7 +40,7 @@ public abstract class EquipmentItem extends Item {
   }
 
   @Override
-  public void appendHoverText(ItemStack stack, Level world, List<Component> lines,
+  public void appendHoverText(ItemStack stack, Item.TooltipContext world, List<Component> lines,
       TooltipFlag tooltipFlag) {
     super.appendHoverText(stack, world, lines, tooltipFlag);
 
@@ -49,17 +49,17 @@ public abstract class EquipmentItem extends Item {
         .filter(Predicates.not(Multimap::isEmpty))
         .ifPresent(attributeModifiers -> {
 
-          lines.add(TextComponent.EMPTY);
-          lines.add(new TranslatableComponent("item.modifiers.clothing")
+          lines.add(Component.empty());
+          lines.add(Component.translatable("item.modifiers.clothing")
               .withStyle(ChatFormatting.GRAY));
 
           for (var entry : attributeModifiers.entries()) {
             var modifier = entry.getValue();
-            var amount = modifier.getAmount();
+            var amount = modifier.amount();
 
             double multipliedAmount;
-            if (modifier.getOperation() != AttributeModifier.Operation.MULTIPLY_BASE
-                && modifier.getOperation() != AttributeModifier.Operation.MULTIPLY_TOTAL) {
+            if (modifier.operation() != AttributeModifier.Operation.ADD_MULTIPLIED_BASE
+                && modifier.operation() != AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL) {
               if (entry.getKey().equals(Attributes.KNOCKBACK_RESISTANCE)) {
                 multipliedAmount = amount * 10.0D;
               } else {
@@ -69,26 +69,26 @@ public abstract class EquipmentItem extends Item {
               multipliedAmount = amount * 100.0D;
             }
 
-            if (modifier.getId() == Item.BASE_ATTACK_DAMAGE_UUID
-                || modifier.getId() == Item.BASE_ATTACK_SPEED_UUID) {
-              lines.add(new TextComponent(" ")
-                  .append(new TranslatableComponent(
-                      "attribute.modifier.equals." + modifier.getOperation().toValue(),
-                      ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(multipliedAmount),
-                      new TranslatableComponent(entry.getKey().getDescriptionId())))
+            if (modifier.id().equals(Item.BASE_ATTACK_DAMAGE_ID)
+                || modifier.id().equals(Item.BASE_ATTACK_SPEED_ID)) {
+              lines.add(Component.literal(" ")
+                  .append(Component.translatable(
+                      "attribute.modifier.equals." + modifier.operation().ordinal(),
+                      ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(multipliedAmount),
+                      Component.translatable(entry.getKey().value().getDescriptionId())))
                   .withStyle(ChatFormatting.DARK_GREEN));
             } else if (amount > 0.0D) {
-              lines.add(new TranslatableComponent(
-                  "attribute.modifier.plus." + modifier.getOperation().toValue(),
-                  ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(multipliedAmount),
-                  new TranslatableComponent(entry.getKey().getDescriptionId()))
+              lines.add(Component.translatable(
+                  "attribute.modifier.plus." + modifier.operation().ordinal(),
+                  ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(multipliedAmount),
+                  Component.translatable(entry.getKey().value().getDescriptionId()))
                       .withStyle(ChatFormatting.BLUE));
             } else if (amount < 0.0D) {
               multipliedAmount = multipliedAmount * -1.0D;
-              lines.add(new TranslatableComponent(
-                  "attribute.modifier.take." + modifier.getOperation().toValue(),
-                  ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(multipliedAmount),
-                  new TranslatableComponent(entry.getKey().getDescriptionId()))
+              lines.add(Component.translatable(
+                  "attribute.modifier.take." + modifier.operation().ordinal(),
+                  ItemAttributeModifiers.ATTRIBUTE_MODIFIER_FORMAT.format(multipliedAmount),
+                  Component.translatable(entry.getKey().value().getDescriptionId()))
                       .withStyle(ChatFormatting.RED));
             }
           }

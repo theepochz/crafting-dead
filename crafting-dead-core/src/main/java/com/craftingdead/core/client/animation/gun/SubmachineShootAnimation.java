@@ -22,7 +22,7 @@ import com.craftingdead.core.client.animation.TimedAnimation;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
-import com.mojang.math.Vector3f;
+import org.joml.Vector3f;
 
 public class SubmachineShootAnimation extends TimedAnimation {
 

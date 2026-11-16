@@ -20,18 +20,21 @@ package com.craftingdead.core.world.item.equipment;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import net.minecraft.core.Holder;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 
 @FunctionalInterface
+@AutoRegisterCapability
 public interface Equipment {
 
   Capability<Equipment> CAPABILITY = CapabilityManager.get(new CapabilityToken<>() {});
 
-  default Multimap<Attribute, AttributeModifier> attributeModifiers() {
+  default Multimap<Holder<Attribute>, AttributeModifier> attributeModifiers() {
     return ImmutableMultimap.of();
   }
 

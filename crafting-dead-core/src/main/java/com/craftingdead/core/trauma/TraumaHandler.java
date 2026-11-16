@@ -49,7 +49,7 @@ public final class TraumaHandler {
 //    if (!event.headshot() || !(event.target() instanceof LivingEntity living)) {
 //      return;
 //    }
-//    if (living.getLevel().isClientSide()) {
+//    if (living.level().isClientSide()) {
 //      return;
 //    }
 //
@@ -80,8 +80,8 @@ public final class TraumaHandler {
 //
 //    if (living instanceof ServerPlayer player) {
 //      NetworkChannel.PLAY.getSimpleChannel().send(
-//          PacketDistributor.PLAYER.with(() -> player),
-//          new TraumaPacket(result.severity(), effect.aimSwayTicks(), effect.aimSwayStrength()));
+//          new TraumaPacket(result.severity(), effect.aimSwayTicks(), effect.aimSwayStrength()),
+//          PacketDistributor.PLAYER.with(() -> player));
 //    }
 //  }
 

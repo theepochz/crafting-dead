@@ -20,7 +20,6 @@ package com.craftingdead.core.world.entity.extension;
 
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.Random;
 import javax.annotation.Nonnull;
 import org.jetbrains.annotations.Nullable;
 import com.craftingdead.core.CraftingDead;
@@ -40,11 +39,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.ForgeMod;
+import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.common.util.LazyOptional;
 
+@AutoRegisterCapability
 public interface LivingExtension<E extends LivingEntity, H extends LivingHandler>
     extends LivingHandler {
 
@@ -53,7 +54,7 @@ public interface LivingExtension<E extends LivingEntity, H extends LivingHandler
   /**
    * @see {@link net.minecraftforge.event.AttachCapabilitiesEvent}
    */
-  ResourceLocation CAPABILITY_KEY = new ResourceLocation(CraftingDead.ID, "living_extension");
+  ResourceLocation CAPABILITY_KEY = ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "living_extension");
 
   @SuppressWarnings("unchecked")
   static <E extends LivingEntity> LivingExtension<E, ?> getOrThrow(E entity) {
@@ -238,15 +239,15 @@ public interface LivingExtension<E extends LivingEntity, H extends LivingHandler
    * @return the {@link Level}
    */
   default Level level() {
-    return this.entity().getLevel();
+    return this.entity().level();
   }
 
   /**
    * Shorthand for {@link LivingEntity#getRandom()}.
    * 
-   * @return the {@link Random}
+   * @return the {@link RandomSource}
    */
-  default Random random() {
+  default net.minecraft.util.RandomSource random() {
     return this.entity().getRandom();
   }
 
@@ -331,7 +332,7 @@ public interface LivingExtension<E extends LivingEntity, H extends LivingHandler
 
   default Vec3 getVelocity() {
     // 0.98 is a magic number used in Minecraft's movement calculations.
-    var gravity = this.entity().getAttributeValue(ForgeMod.ENTITY_GRAVITY.get()) * 0.98F;
+    var gravity = this.entity().getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.GRAVITY) * 0.98F;
     return this.entity().getDeltaMovement().add(0, gravity, 0);
   }
 

@@ -18,20 +18,24 @@
 
 package com.craftingdead.core.world.item;
 
+import com.craftingdead.core.CraftingDead;
+
+import net.minecraft.resources.ResourceLocation;
+
+import net.minecraft.network.chat.Component;
+
 
 import java.util.List;
-import java.util.UUID;
 import org.jetbrains.annotations.Nullable;
 import com.craftingdead.core.world.item.equipment.Equipment;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.core.Holder;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Inventory;
@@ -46,7 +50,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.capabilities.ICapabilitySerializable;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.CapabilityItemHandler;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 
@@ -54,14 +58,14 @@ public class StorageItem extends EquipmentItem {
 
   public static final int MAX_ROWS_TO_SHOW = 6;
 
-  public static final UUID ARMOR_MODIFIER_ID =
-      UUID.fromString("5900b64d-0e0b-4872-804b-0522bb87c33f");
+  public static final ResourceLocation ARMOR_MODIFIER_ID =
+      ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "storage_armor");
 
-  private final Multimap<Attribute, AttributeModifier> attributeModifiers;
+  private final Multimap<Holder<Attribute>, AttributeModifier> attributeModifiers;
   private final Equipment.Slot slot;
   private final int itemRows;
   private final ItemHandlerMenuConstructor menuConstructor;
-  private final TranslatableComponent component;
+  private final Component component;
 
   public StorageItem(Properties properties) {
     super(properties);
@@ -73,14 +77,14 @@ public class StorageItem extends EquipmentItem {
   }
 
   @Override
-  public ICapabilityProvider initCapabilities(ItemStack itemStack, @Nullable CompoundTag nbt) {
+  public ICapabilityProvider getCapabilityProvider(ItemStack itemStack) {
     return new ICapabilitySerializable<CompoundTag>() {
 
       private final LazyOptional<Storage> storage = LazyOptional.of(Storage::new);
 
       @Override
       public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
-        if (cap == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
+        if (cap == ForgeCapabilities.ITEM_HANDLER) {
           return this.storage.lazyMap(Storage::itemHandler).cast();
         }
 
@@ -92,24 +96,24 @@ public class StorageItem extends EquipmentItem {
       }
 
       @Override
-      public CompoundTag serializeNBT() {
+      public CompoundTag serializeNBT(HolderLookup.Provider provider) {
         return this.storage
             .lazyMap(Storage::itemHandler)
-            .lazyMap(ItemStackHandler::serializeNBT)
+            .lazyMap(itemHandler -> itemHandler.serializeNBT(provider))
             .orElseGet(CompoundTag::new);
       }
 
       @Override
-      public void deserializeNBT(CompoundTag tag) {
+      public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
         this.storage
             .lazyMap(Storage::itemHandler)
-            .ifPresent(itemHandler -> itemHandler.deserializeNBT(tag));
+            .ifPresent(itemHandler -> itemHandler.deserializeNBT(provider, tag));
       }
     };
   }
 
   @Override
-  public void appendHoverText(ItemStack itemStack, Level world, List<Component> lines,
+  public void appendHoverText(ItemStack itemStack, Item.TooltipContext world, List<Component> lines,
       TooltipFlag tooltipFlag) {
     super.appendHoverText(itemStack, world, lines, tooltipFlag);
 
@@ -117,7 +121,7 @@ public class StorageItem extends EquipmentItem {
       lines.add(this.component.copy().withStyle(ChatFormatting.GRAY));
     }
 
-    itemStack.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY)
+    itemStack.getCapability(ForgeCapabilities.ITEM_HANDLER)
         .ifPresent(itemHandler -> {
           int itemsBeyondLimit = 0;
           int itemsDisplayed = 0;
@@ -129,13 +133,13 @@ public class StorageItem extends EquipmentItem {
                 itemsBeyondLimit++;
                 continue;
               }
-              var amountText = new TextComponent(stack.getCount() + "x ")
+              var amountText = Component.literal(stack.getCount() + "x ")
                   .withStyle(ChatFormatting.DARK_GRAY);
               var itemText = stack.getHoverName().plainCopy().withStyle(ChatFormatting.GRAY);
               // First item
               if (itemsDisplayed == 1) {
-                lines.add(new TextComponent(" "));
-                lines.add(new TranslatableComponent("storage_item.contents")
+                lines.add(Component.literal(" "));
+                lines.add(Component.translatable("storage_item.contents")
                     .withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
               }
               lines.add(amountText.append(itemText));
@@ -143,44 +147,22 @@ public class StorageItem extends EquipmentItem {
           }
 
           if (itemsBeyondLimit > 0) {
-            lines.add(new TextComponent(". . . + " + itemsBeyondLimit)
+            lines.add(Component.literal(". . . + " + itemsBeyondLimit)
                 .withStyle(ChatFormatting.RED));
           }
         });
   }
 
-  @Override
-  public CompoundTag getShareTag(ItemStack stack) {
-    var shareTag = stack.getTag() == null ? new CompoundTag() : stack.getTag();
-    stack.getCapability(Equipment.CAPABILITY)
-        .<Storage>cast()
-        .lazyMap(Storage::itemHandler)
-        .map(ItemStackHandler::serializeNBT)
-        .filter(tag -> !tag.isEmpty())
-        .ifPresent(tag -> shareTag.put("storage", tag));
-    return shareTag;
-  }
-
-  @Override
-  public void readShareTag(ItemStack stack, @Nullable CompoundTag tag) {
-    if (tag != null && tag.contains("storage", Tag.TAG_COMPOUND)) {
-      stack.getCapability(Equipment.CAPABILITY)
-          .<Storage>cast()
-          .ifPresent(storage -> storage.itemHandler().deserializeNBT(tag.getCompound("storage")));
-    }
-    super.readShareTag(stack, tag);
-  }
-
   public static class Properties extends Item.Properties {
 
-    private final ImmutableMultimap.Builder<Attribute, AttributeModifier> attributeModifiers =
+    private final ImmutableMultimap.Builder<Holder<Attribute>, AttributeModifier> attributeModifiers =
         ImmutableMultimap.builder();
     private Equipment.Slot slot;
     private int itemRows;
     private ItemHandlerMenuConstructor menuConstructor;
-    private TranslatableComponent component;
+    private Component component;
 
-    public Properties attributeModifier(Attribute attribute, AttributeModifier modifier) {
+    public Properties attributeModifier(Holder<Attribute> attribute, AttributeModifier modifier) {
       this.attributeModifiers.put(attribute, modifier);
       return this;
     }
@@ -200,7 +182,7 @@ public class StorageItem extends EquipmentItem {
       return this;
     }
 
-    public Properties toolTip(TranslatableComponent component) {
+    public Properties toolTip(Component component) {
       this.component = component;
       return this;
     }
@@ -239,7 +221,7 @@ public class StorageItem extends EquipmentItem {
     }
 
     @Override
-    public Multimap<Attribute, AttributeModifier> attributeModifiers() {
+    public Multimap<Holder<Attribute>, AttributeModifier> attributeModifiers() {
       return StorageItem.this.attributeModifiers;
     }
 

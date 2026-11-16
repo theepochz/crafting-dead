@@ -23,10 +23,12 @@ import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 
+@AutoRegisterCapability
 public interface Paint {
 
   Capability<Paint> CAPABILITY = CapabilityManager.get(new CapabilityToken<>() {});
@@ -38,7 +40,7 @@ public interface Paint {
   }
 
   static Paint of(ResourceKey<Skin> skin) {
-    return () -> Skins.REGISTRY.getOrCreateHolder(skin);
+    return () -> Skins.REGISTRY.getHolderOrThrow(skin);
   }
 
   static Paint of(ResourceKey<Skin> skin, int color) {
@@ -55,13 +57,13 @@ public interface Paint {
 
       @Override
       public Holder<Skin> getSkin() {
-        return Skins.REGISTRY.getOrCreateHolder(skin);
+        return Skins.REGISTRY.getHolderOrThrow(skin);
       }
     };
   }
 
   static boolean isValid(ItemStack gunStack, ItemStack itemStack) {
-    return isValid(gunStack.getItem().getRegistryName(), itemStack);
+    return isValid(gunStack.getItem().builtInRegistryHolder().key().location(), itemStack);
   }
 
   static boolean isValid(ResourceLocation gunName, ItemStack itemStack) {

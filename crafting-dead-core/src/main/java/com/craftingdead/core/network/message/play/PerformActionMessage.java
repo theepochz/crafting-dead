@@ -24,13 +24,16 @@ import com.craftingdead.core.world.action.ActionType;
 import com.craftingdead.core.world.entity.extension.LivingExtension;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 public record PerformActionMessage(ActionType<?> actionType, int performerEntityId,
     FriendlyByteBuf buf) {
 
   public void encode(FriendlyByteBuf out) {
-    out.writeRegistryId(this.actionType);
+    @SuppressWarnings("unchecked")
+    var actionRegistry = (net.minecraftforge.registries.ForgeRegistry<ActionType<?>>) com.craftingdead.core.world.action.ActionTypes.REGISTRY
+        .get();
+    out.writeById(actionRegistry::getID, this.actionType);
     out.writeVarInt(this.performerEntityId);
     out.writeVarInt(this.buf.readableBytes());
     out.writeBytes(this.buf);
@@ -38,16 +41,19 @@ public record PerformActionMessage(ActionType<?> actionType, int performerEntity
   }
 
   public static PerformActionMessage decode(FriendlyByteBuf in) {
-    return new PerformActionMessage(in.readRegistryId(), in.readVarInt(),
-        new FriendlyByteBuf(in.readBytes(in.readVarInt())));
+    @SuppressWarnings("unchecked")
+    var actionRegistry = (net.minecraftforge.registries.ForgeRegistry<ActionType<?>>) com.craftingdead.core.world.action.ActionTypes.REGISTRY
+        .get();
+    return new PerformActionMessage(in.readById(actionRegistry::getValue),
+        in.readVarInt(), new FriendlyByteBuf(in.readBytes(in.readVarInt())));
   }
 
-  public boolean handle(Supplier<NetworkEvent.Context> ctx) {
-    ctx.get().enqueueWork(() -> {
+  public boolean handle(CustomPayloadEvent.Context ctx) {
+    ctx.enqueueWork(() -> {
       final var performerEntity =
-          NetworkUtil.getEntityOrSender(ctx.get(), this.performerEntityId, LivingEntity.class);
+          NetworkUtil.getEntityOrSender(ctx, this.performerEntityId, LivingEntity.class);
       final var performer = LivingExtension.getOrThrow(performerEntity);
-      final var serverSide = ctx.get().getDirection().getReceptionSide().isServer();
+      final var serverSide = ctx.isServerSide();
       if (!serverSide || this.actionType.isTriggeredByClient()) {
         performer.performAction(this.actionType.decode(performer, this.buf), serverSide);
       }

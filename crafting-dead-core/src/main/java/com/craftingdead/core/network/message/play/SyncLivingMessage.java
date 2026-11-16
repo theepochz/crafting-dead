@@ -23,7 +23,7 @@ import com.craftingdead.core.network.NetworkUtil;
 import com.craftingdead.core.world.entity.extension.LivingExtension;
 import io.netty.buffer.Unpooled;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 public record SyncLivingMessage(int entityId, FriendlyByteBuf data) {
 
@@ -38,8 +38,8 @@ public record SyncLivingMessage(int entityId, FriendlyByteBuf data) {
         new FriendlyByteBuf(Unpooled.wrappedBuffer(in.readBytes(in.readVarInt()))));
   }
 
-  public boolean handle(Supplier<NetworkEvent.Context> ctx) {
-    ctx.get().enqueueWork(() -> NetworkUtil.getEntity(ctx.get(), this.entityId)
+  public boolean handle(CustomPayloadEvent.Context ctx) {
+    ctx.enqueueWork(() -> NetworkUtil.getEntity(ctx, this.entityId)
         .getCapability(LivingExtension.CAPABILITY)
         .ifPresent(living -> living.decode(this.data)));
     return true;

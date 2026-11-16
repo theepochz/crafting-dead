@@ -28,6 +28,7 @@ public interface ModDist {
    */
   @Deprecated
   default RegistryAccess registryAccess() {
-    return RegistryAccess.BUILTIN.get();
+    return net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(
+        net.minecraft.core.registries.BuiltInRegistries.REGISTRY);
   }
 }

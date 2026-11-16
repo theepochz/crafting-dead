@@ -12,8 +12,6 @@ repositories {
 }
 
 dependencies {
-    implementation 'cpw.mods:bootstraplauncher:1.0.0'
-    
     // Sentry for error tracking - available in dev, bundled via jarJar for production
     api('io.sentry:sentry:6.34.0') {
         exclude group: 'com.google.code.gson', module: 'gson'
@@ -21,10 +19,6 @@ dependencies {
     jarJar(group: 'io.sentry', name: 'sentry', version: '[6.34.0,6.35.0)') {
         exclude group: 'com.google.code.gson', module: 'gson'
     }
-}
-
-mixin {
-    add sourceSets.main, 'craftingdead.refmap.json'
 }
 
 jarJar.enable()
@@ -38,7 +32,6 @@ jar {
             "MixinConfigs": "craftingdead.mixins.json"
         ])
     }
-    finalizedBy 'reobfJar'
 }
 
 minecraft {
@@ -48,12 +41,7 @@ minecraft {
         configureEach {
             property 'forge.logging.console.level', 'debug'
             args '--mixin', 'craftingdead.mixins.json'
-
-            mods {
-                craftingdead {
-                    source sourceSets.main
-                }
-            }
+            property 'mixin.env.remapRefMap', 'false'
         }
 
         client {

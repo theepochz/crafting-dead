@@ -18,6 +18,8 @@
 
 package com.craftingdead.core.client.renderer.entity.layers;
 
+import net.minecraft.world.item.ItemDisplayContext;
+
 import java.util.Objects;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.Nullable;
@@ -86,7 +88,7 @@ public class EquipmentLayer<T extends LivingEntity, M extends EntityModel<T> & H
 
         if (!itemStack.isEmpty()) {
           var bakedModel =
-              itemRenderer.getModel(itemStack, livingEntity.getLevel(), livingEntity, 0);
+              itemRenderer.getModel(itemStack, livingEntity.level(), livingEntity, 0);
 
           poseStack.pushPose();
 
@@ -113,7 +115,7 @@ public class EquipmentLayer<T extends LivingEntity, M extends EntityModel<T> & H
           }
 
           // Renders the item. Also note the TransformType.
-          itemRenderer.render(itemStack, ItemTransforms.TransformType.HEAD, false,
+          itemRenderer.render(itemStack, ItemDisplayContext.HEAD, false,
               poseStack, bufferSource, packedLight, OverlayTexture.NO_OVERLAY, bakedModel);
 
           poseStack.popPose();

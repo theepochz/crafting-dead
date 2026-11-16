@@ -61,21 +61,22 @@ public class FireGrenadeEntity extends Grenade implements ExplosionSource {
   @Override
   public void activatedChanged(boolean activated) {
     if (activated) {
-      if (!this.level.isClientSide()) {
+      if (!this.level().isClientSide()) {
         this.kill();
-        var fireRadius = ServerConfig.instance.explosivesFireGrenadeRadius.get().floatValue();
+        int fireRadius = ServerConfig.instance.explosivesFireGrenadeRadius.get().floatValue() > 0
+        ? (int) ServerConfig.instance.explosivesFireGrenadeRadius.get().floatValue() : 0;
         // Option added to disable this feature to prevent potential abuse for movement boosts
         if (ServerConfig.instance.enableFireGrenadeSecondaryExplosion.get()) {
-          this.level.explode(this, this.createDamageSource(), null,
+          this.level().explode(this, this.createDamageSource(), null,
               this.getX(), this.getY() + this.getBbHeight(), this.getZ(), fireRadius, true,
               ServerConfig.instance.explosivesFireGrenadeExplosionMode.get());
         }
 
         BlockPos.betweenClosedStream(this.blockPosition().offset(-fireRadius, 0, -fireRadius),
             this.blockPosition().offset(fireRadius, 0, fireRadius)).forEach(blockPos -> {
-              if (this.level.getBlockState(blockPos).isAir()) {
+              if (this.level().getBlockState(blockPos).isAir()) {
                 if (Math.random() <= 0.8D) {
-                  this.level.setBlockAndUpdate(blockPos, Blocks.FIRE.defaultBlockState());
+                  this.level().setBlockAndUpdate(blockPos, Blocks.FIRE.defaultBlockState());
                 }
               }
             });

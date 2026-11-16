@@ -54,7 +54,8 @@ public class C4Explosive extends Grenade implements ExplosionSource {
 
   @Override
   public boolean hurt(DamageSource source, float amount) {
-    if (source.isExplosion() || source.isFire()) {
+    if (source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION)
+        || source.is(net.minecraft.tags.DamageTypeTags.IS_FIRE)) {
       if (source.getEntity() != null) {
         this.setSource(source.getEntity());
       }
@@ -69,12 +70,12 @@ public class C4Explosive extends Grenade implements ExplosionSource {
   @Override
   public void activatedChanged(boolean activated) {
     if (activated) {
-      if (!this.level.isClientSide()) {
+      if (!this.level().isClientSide()) {
         this.kill();
         if (knockbackPenalty == 0) {
           // Getting entity by type crashes the server for some reason, this method works fine with
           // no big performance impact
-          var others = this.level.getEntities(this, this.getBoundingBox().inflate(2)).stream()
+          var others = this.level().getEntities(this, this.getBoundingBox().inflate(2)).stream()
               .filter(e -> e instanceof C4Explosive)
               .map(e -> (C4Explosive) e).toList();
           for (C4Explosive other : others) {
@@ -83,7 +84,7 @@ public class C4Explosive extends Grenade implements ExplosionSource {
           this.setKnockbackPenalty(others.size());
         }
 
-        this.level.explode(this, this.createDamageSource(), null,
+        this.level().explode(this, this.createDamageSource(), null,
             this.getX(), this.getY() + this.getBbHeight(), this.getZ(),
             ServerConfig.instance.explosivesC4Radius.get().floatValue(), false,
             ServerConfig.instance.explosivesC4ExplosionMode.get());

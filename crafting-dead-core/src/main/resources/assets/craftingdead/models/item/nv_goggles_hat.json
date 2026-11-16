@@ -1,6 +1,6 @@
 {
   "parent": "forge:item/default",
-  "loader": "forge:separate-perspective",
+  "loader": "forge:separate_transforms",
   "base": {
     "parent": "item/generated",
     "textures": {
@@ -14,9 +14,21 @@
         "base": "craftingdead:hats/nv_goggles_hat"
       },
       "transform": {
-        "rotation": [0, 180, 0],
-        "translation": [-1.55, -0.485, -1.55],
-        "scale": [1.05, 1.05, 1.05]
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "translation": [
+          -1.55,
+          -0.485,
+          -1.55
+        ],
+        "scale": [
+          1.05,
+          1.05,
+          1.05
+        ]
       }
     }
   }

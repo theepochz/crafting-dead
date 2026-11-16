@@ -756,10 +756,7 @@
   },
   "trench_gun_distant_shoot": {
     "sounds": [
-      {
-        "name": "craftingdead:trench_gun_distant_shoot",
-        "attenuation_distance": 65
-      }
+      "craftingdead:trench_gun_shoot"
     ]
   },
   "trench_gun_shoot": {
@@ -772,7 +769,7 @@
   },
   "vector_reload": {
     "sounds": [
-      "craftingdead:vector_reload"
+      "craftingdead:vector_shoot"
     ]
   },
   "vector_distant_shoot": {

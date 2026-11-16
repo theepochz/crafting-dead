@@ -19,14 +19,20 @@
 package com.craftingdead.core.world.item.gun.ammoprovider;
 
 import java.util.function.Supplier;
-import net.minecraftforge.registries.ForgeRegistryEntry;
+import net.minecraftforge.registries.IForgeRegistry;
+import com.craftingdead.core.util.RegistryEntry;
 
-public class AmmoProviderType extends ForgeRegistryEntry<AmmoProviderType> {
+public class AmmoProviderType extends RegistryEntry<AmmoProviderType> {
 
   private final Supplier<AmmoProvider> factory;
 
   public AmmoProviderType(Supplier<AmmoProvider> factory) {
     this.factory = factory;
+  }
+
+  @Override
+  protected IForgeRegistry<AmmoProviderType> getRegistry() {
+    return AmmoProviderTypes.registry.get();
   }
 
   public AmmoProvider create() {

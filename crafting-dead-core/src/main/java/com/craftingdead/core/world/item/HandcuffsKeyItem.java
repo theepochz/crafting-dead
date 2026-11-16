@@ -18,12 +18,12 @@
 
 package com.craftingdead.core.world.item;
 
+import net.minecraft.network.chat.Component;
+
 import java.util.List;
 import org.jetbrains.annotations.Nullable;
 import com.craftingdead.core.world.entity.extension.PlayerExtension;
 import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -50,7 +50,7 @@ public class HandcuffsKeyItem extends Item {
         extension.setHandcuffs(ItemStack.EMPTY);
 
         playerHit.displayClientMessage(
-            new TranslatableComponent("handcuffs_key.removed").withStyle(ChatFormatting.GREEN),
+            Component.translatable("handcuffs_key.removed").withStyle(ChatFormatting.GREEN),
             true);
 
         if (!player.addItem(handcuffs)) {
@@ -60,13 +60,13 @@ public class HandcuffsKeyItem extends Item {
     }
 
 
-    return InteractionResult.sidedSuccess(player.getLevel().isClientSide());
+    return InteractionResult.sidedSuccess(player.level().isClientSide());
   }
 
   @Override
-  public void appendHoverText(ItemStack item, @Nullable Level level,
+  public void appendHoverText(ItemStack item, Item.TooltipContext level,
       List<Component> lines, TooltipFlag tooltipFlag) {
     lines.add(
-        new TranslatableComponent("handcuffs_key.information").withStyle(ChatFormatting.GRAY));
+        Component.translatable("handcuffs_key.information").withStyle(ChatFormatting.GRAY));
   }
 }

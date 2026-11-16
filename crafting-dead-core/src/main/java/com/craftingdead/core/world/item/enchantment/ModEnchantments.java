@@ -19,19 +19,25 @@
 package com.craftingdead.core.world.item.enchantment;
 
 import com.craftingdead.core.CraftingDead;
-import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 
+/**
+ * Enchantments are data driven in 1.21: definitions live in
+ * {@code data/craftingdead/enchantment/*.json}. Only the resource keys are declared here.
+ */
 public class ModEnchantments {
 
-  public static final DeferredRegister<Enchantment> deferredRegister =
-      DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, CraftingDead.ID);
+  public static final ResourceKey<Enchantment> ARMOR_PENETRATION =
+      ResourceKey.create(Registries.ENCHANTMENT,
+          ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "armor_penetration"));
 
-  public static final RegistryObject<ArmorPenetrationEnchantment> ARMOR_PENETRATION =
-      deferredRegister.register("armor_penetration",
-          () -> new ArmorPenetrationEnchantment(Enchantment.Rarity.COMMON,
-              EquipmentSlot.MAINHAND));
+  public static Holder<Enchantment> holder(Level level) {
+    return level.registryAccess().registryOrThrow(Registries.ENCHANTMENT)
+        .getHolderOrThrow(ARMOR_PENETRATION);
+  }
 }

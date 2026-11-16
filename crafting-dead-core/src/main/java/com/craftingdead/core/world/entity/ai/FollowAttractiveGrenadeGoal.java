@@ -40,10 +40,10 @@ public class FollowAttractiveGrenadeGoal extends Goal {
 
   @Override
   public boolean canUse() {
-    if (this.goalOwner.hasEffect(ModMobEffects.FLASH_BLINDNESS.get())) {
+    if (this.goalOwner.hasEffect(ModMobEffects.FLASH_BLINDNESS.getHolder().orElseThrow())) {
       return false;
     }
-    List<Grenade> list = this.goalOwner.level.getEntitiesOfClass(Grenade.class,
+    List<Grenade> list = this.goalOwner.level().getEntitiesOfClass(Grenade.class,
         this.goalOwner.getBoundingBox().inflate(20.0D, 5.0D, 20.0D));
 
     Grenade nearestGrenade = null;
@@ -73,11 +73,11 @@ public class FollowAttractiveGrenadeGoal extends Goal {
       return false;
     }
 
-    if (this.goalOwner.hasEffect(ModMobEffects.FLASH_BLINDNESS.get())) {
+    if (this.goalOwner.hasEffect(ModMobEffects.FLASH_BLINDNESS.getHolder().orElseThrow())) {
       return false;
     }
 
-    if (this.grenade.level != this.goalOwner.level) {
+    if (this.grenade.level() != this.goalOwner.level()) {
       return false;
     }
 

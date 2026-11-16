@@ -33,7 +33,7 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.items.CapabilityItemHandler;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.wrapper.InvWrapper;
 
@@ -105,16 +105,16 @@ public class MagazineReloadAction extends AbstractReloadAction {
 
     // Vest - first
     living.getItemInSlot(Equipment.Slot.VEST)
-        .getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY)
+        .getCapability(ForgeCapabilities.ITEM_HANDLER)
         .ifPresent(builder::add);
 
     // Backpack - second
     living.getItemInSlot(Equipment.Slot.BACKPACK)
-        .getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY)
+        .getCapability(ForgeCapabilities.ITEM_HANDLER)
         .ifPresent(builder::add);
 
     // Inventory - third
-    living.entity().getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY)
+    living.entity().getCapability(ForgeCapabilities.ITEM_HANDLER)
         .ifPresent(builder::add);
 
     // Creative Inventory if the player is in creative mode - fourth

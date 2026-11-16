@@ -72,7 +72,7 @@ public interface PlayerExtension<E extends Player>
 
   default boolean damageHandcuffs(int damage) {
     final var handcuffs = this.getHandcuffs().copy();
-    handcuffs.hurtAndBreak(damage, this.entity(), __ -> this.breakItem(handcuffs));
+    handcuffs.hurtAndBreak(damage, this.entity(), net.minecraft.world.entity.EquipmentSlot.MAINHAND);
     if (handcuffs.isEmpty()) {
       this.setHandcuffs(ItemStack.EMPTY);
       return true;

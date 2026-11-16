@@ -19,7 +19,9 @@
 package com.craftingdead.core.world.inventory;
 
 import com.craftingdead.core.CraftingDead;
+import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraftforge.network.IContainerFactory;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -27,26 +29,26 @@ import net.minecraftforge.registries.RegistryObject;
 public class ModMenuTypes {
 
   public static final DeferredRegister<MenuType<?>> deferredRegister =
-      DeferredRegister.create(ForgeRegistries.CONTAINERS, CraftingDead.ID);
+      DeferredRegister.create(ForgeRegistries.MENU_TYPES, CraftingDead.ID);
 
   public static final RegistryObject<MenuType<EquipmentMenu>> EQUIPMENT =
-      deferredRegister.register("equipment", () -> new MenuType<>(EquipmentMenu::new));
+      deferredRegister.register("equipment", () -> new MenuType<>(EquipmentMenu::new, FeatureFlags.DEFAULT_FLAGS));
 
   public static final RegistryObject<MenuType<CraftingMenu>> CRAFTING =
-      deferredRegister.register("crafting", () -> new MenuType<>(CraftingMenu::new));
+      deferredRegister.register("crafting", () -> new MenuType<>(CraftingMenu::new, FeatureFlags.DEFAULT_FLAGS));
 
   public static final RegistryObject<MenuType<GenericMenu>> VEST =
-      deferredRegister.register("vest", () -> new MenuType<>(GenericMenu::createVest));
+      deferredRegister.register("vest", () -> new MenuType<>(GenericMenu::createVest, FeatureFlags.DEFAULT_FLAGS));
 
   public static final RegistryObject<MenuType<GenericMenu>> SMALL_BACKPACK =
-      deferredRegister.register("small_backpack", () -> new MenuType<>(GenericMenu::createSmallBackpack));
+      deferredRegister.register("small_backpack", () -> new MenuType<>(GenericMenu::createSmallBackpack, FeatureFlags.DEFAULT_FLAGS));
 
   public static final RegistryObject<MenuType<GenericMenu>> MEDIUM_BACKPACK =
-      deferredRegister.register("medium_backpack", () -> new MenuType<>(GenericMenu::createMediumBackpack));
+      deferredRegister.register("medium_backpack", () -> new MenuType<>(GenericMenu::createMediumBackpack, FeatureFlags.DEFAULT_FLAGS));
 
   public static final RegistryObject<MenuType<GenericMenu>> LARGE_BACKPACK =
-      deferredRegister.register("large_backpack", () -> new MenuType<>(GenericMenu::createLargeBackpack));
+      deferredRegister.register("large_backpack", () -> new MenuType<>(GenericMenu::createLargeBackpack, FeatureFlags.DEFAULT_FLAGS));
 
   public static final RegistryObject<MenuType<GenericMenu>> GUN_BAG =
-      deferredRegister.register("gun_bag", () -> new MenuType<>(GenericMenu::createGunBag));
+      deferredRegister.register("gun_bag", () -> new MenuType<>(GenericMenu::createGunBag, FeatureFlags.DEFAULT_FLAGS));
 }

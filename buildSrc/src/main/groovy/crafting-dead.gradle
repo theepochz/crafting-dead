@@ -15,18 +15,12 @@ minecraft {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
 repositories {
     mavenCentral()
-    maven {
-        url 'https://dl.brad.ac/releases'
-        mavenContent {
-            releasesOnly()
-        }
-    }
     maven {
         name 'sponge'
         url 'https://repo.spongepowered.org/repository/maven-public/'
@@ -44,8 +38,7 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 jar {
     archiveBaseName = project.name
-    from rootProject.file('LICENSE.txt')
-    finalizedBy('reobfJar') 
+    from rootProject.file('LICENSE.txt')    
 }
 
 license {
@@ -59,4 +52,6 @@ license {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    // Surface the full porting error list instead of the default 100.
+    options.compilerArgs += ['-Xmaxerrs', '10000']
 }

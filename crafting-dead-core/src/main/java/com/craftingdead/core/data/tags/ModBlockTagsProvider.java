@@ -18,22 +18,26 @@
 
 package com.craftingdead.core.data.tags;
 
+import java.util.concurrent.CompletableFuture;
 import com.craftingdead.core.CraftingDead;
 import com.craftingdead.core.tags.ModBlockTags;
-import net.minecraft.data.DataGenerator;
-import net.minecraft.data.tags.BlockTagsProvider;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.data.PackOutput;
 import net.minecraft.tags.BlockTags;
+import net.minecraftforge.common.data.BlockTagsProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 
 public class ModBlockTagsProvider extends BlockTagsProvider {
 
-  public ModBlockTagsProvider(DataGenerator dataGenerator, ExistingFileHelper existingFileHelper) {
-    super(dataGenerator, CraftingDead.ID, existingFileHelper);
+  public ModBlockTagsProvider(PackOutput output,
+      CompletableFuture<HolderLookup.Provider> lookupProvider,
+      ExistingFileHelper existingFileHelper) {
+    super(output, lookupProvider, CraftingDead.ID, existingFileHelper);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public void addTags() {
+  protected void addTags(HolderLookup.Provider provider) {
     this.tag(ModBlockTags.BULLETS_PASS_THROUGH)
         .addTags(BlockTags.WOOL)
         .addTags(BlockTags.FENCES)

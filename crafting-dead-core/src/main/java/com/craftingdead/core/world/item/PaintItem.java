@@ -18,6 +18,8 @@
 
 package com.craftingdead.core.world.item;
 
+import net.minecraft.network.chat.Component;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -29,8 +31,6 @@ import com.craftingdead.core.world.item.gun.skin.Skin;
 import com.craftingdead.core.world.item.gun.skin.Skins;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
@@ -58,7 +58,7 @@ public class PaintItem extends Item {
   }
 
   @Override
-  public ICapabilityProvider initCapabilities(ItemStack itemStack, @Nullable CompoundTag nbt) {
+  public ICapabilityProvider getCapabilityProvider(ItemStack itemStack) {
     return CapabilityUtil.provider(() -> Paint.of(this.skin, this.multipaint
             ? OptionalInt.of(
             DyeColor.values()[ThreadLocalRandom.current().nextInt(DyeColor.values().length)]
@@ -68,15 +68,15 @@ public class PaintItem extends Item {
   }
 
   @Override
-  public void appendHoverText(ItemStack itemStack, @Nullable Level level,
+  public void appendHoverText(ItemStack itemStack, Item.TooltipContext level,
       List<Component> lines, TooltipFlag flag) {
     var skins = Skins.REGISTRY.get(this.skin).getAcceptedGuns();
     if (skins == null || skins.isEmpty()) {
-      lines.add(new TranslatableComponent("paint.no_guns")
+      lines.add(Component.translatable("paint.no_guns")
           .withStyle(ChatFormatting.GRAY));
       return;
     }
-    lines.add(new TranslatableComponent("paint.accepted_guns")
+    lines.add(Component.translatable("paint.accepted_guns")
         .withStyle(ChatFormatting.GRAY));
     skins.stream()
         .map(ForgeRegistries.ITEMS::getValue)

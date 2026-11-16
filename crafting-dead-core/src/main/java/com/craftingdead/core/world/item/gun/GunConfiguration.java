@@ -32,9 +32,16 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.ForgeRegistryEntry;
+import net.minecraftforge.registries.IForgeRegistry;
+import com.craftingdead.core.util.RegistryEntry;
 
-public class GunConfiguration extends ForgeRegistryEntry<GunConfiguration> {
+public class GunConfiguration extends RegistryEntry<GunConfiguration> {
+
+  @Override
+  protected IForgeRegistry<GunConfiguration> getRegistry() {
+    return GunConfigurations.registry.get();
+  }
+
 
   public static final Codec<GunConfiguration> DIRECT_CODEC =
       RecordCodecBuilder.create(instance -> instance

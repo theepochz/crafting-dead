@@ -35,6 +35,7 @@ public class BlockItemAction extends ItemAction {
   private final BlockItemActionType type;
   private final LivingExtension<?, ?> performer;
   private final UseOnContext context;
+  private final BlockHitResult hitResult;
 
   private BlockState blockState;
 
@@ -43,6 +44,7 @@ public class BlockItemAction extends ItemAction {
     super(context.getHand());
     this.type = type;
     this.performer = performer;
+    this.hitResult = null;
     this.context = context;
   }
 
@@ -51,6 +53,7 @@ public class BlockItemAction extends ItemAction {
     super(hand);
     this.type = type;
     this.performer = performer;
+    this.hitResult = hitResult;
     this.context = new UseOnContext(performer.level(),
         performer.entity() instanceof Player player ? player : null, hand,
         performer.entity().getItemInHand(hand), hitResult);
@@ -58,6 +61,10 @@ public class BlockItemAction extends ItemAction {
 
   public UseOnContext getContext() {
     return this.context;
+  }
+
+  public BlockHitResult getHitResult() {
+    return this.hitResult;
   }
 
   public BlockState getBlockState() {
@@ -110,7 +117,7 @@ public class BlockItemAction extends ItemAction {
   public void destroyBlockAction() {
     var pos = this.context.getClickedPos();
     if (this.type.getDestroyPredicate().test(this.performer.level().getBlockState(pos))) {
-      NetworkChannel.PLAY.getSimpleChannel().sendToServer(new BlockDestroyActionMessage(pos));
+      NetworkChannel.PLAY.getSimpleChannel().send(new BlockDestroyActionMessage(pos), net.minecraftforge.network.PacketDistributor.SERVER.noArg());
     }
   }
 }

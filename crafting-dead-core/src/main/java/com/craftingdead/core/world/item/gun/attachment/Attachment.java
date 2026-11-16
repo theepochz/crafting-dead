@@ -18,6 +18,8 @@
 
 package com.craftingdead.core.world.item.gun.attachment;
 
+import net.minecraft.network.chat.Component;
+
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
@@ -27,11 +29,15 @@ import com.craftingdead.core.world.inventory.GunCraftSlotType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.Util;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraftforge.registries.ForgeRegistryEntry;
+import net.minecraftforge.registries.IForgeRegistry;
+import com.craftingdead.core.util.RegistryEntry;
 
-public class Attachment extends ForgeRegistryEntry<Attachment> implements ItemLike {
+public class Attachment extends RegistryEntry<Attachment> implements ItemLike {
+
+  @Override
+  protected IForgeRegistry<Attachment> getRegistry() {
+    return Attachments.registry.get();
+  }
 
   private final Map<MultiplierType, Float> multipliers;
   private final GunCraftSlotType inventorySlot;
@@ -82,7 +88,7 @@ public class Attachment extends ForgeRegistryEntry<Attachment> implements ItemLi
   }
 
   public Component getDescription() {
-    return new TranslatableComponent(this.getDescriptionId());
+    return Component.translatable(this.getDescriptionId());
   }
 
   @Override

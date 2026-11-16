@@ -22,7 +22,7 @@ import com.craftingdead.core.world.item.ClothingItem;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -42,7 +42,7 @@ public class ClothingProtectionInitializer {
    * This ensures loot, mob drops, and spawned items get protection values.
    */
 //  @SubscribeEvent
-//  public static void onItemEntitySpawn(EntityJoinWorldEvent event) {
+//  public static void onItemEntitySpawn(EntityJoinLevelEvent event) {
 //    if (event.getWorld().isClientSide()) {
 //      return; // Only process on server side
 //    }

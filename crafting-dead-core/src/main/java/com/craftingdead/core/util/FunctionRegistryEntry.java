@@ -19,10 +19,8 @@
 package com.craftingdead.core.util;
 
 import java.util.function.Function;
-import net.minecraftforge.registries.ForgeRegistryEntry;
 
-public class FunctionRegistryEntry<T, R> extends ForgeRegistryEntry<FunctionRegistryEntry<T, R>>
-    implements Function<T, R> {
+public class FunctionRegistryEntry<T, R> implements Function<T, R> {
 
   private final Function<T, R> fun;
 

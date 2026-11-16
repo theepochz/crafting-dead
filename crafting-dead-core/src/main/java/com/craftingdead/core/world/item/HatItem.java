@@ -18,8 +18,13 @@
 
 package com.craftingdead.core.world.item;
 
+import com.craftingdead.core.CraftingDead;
+
+import net.minecraft.resources.ResourceLocation;
+
+import net.minecraft.network.chat.Component;
+
 import java.util.List;
-import java.util.UUID;
 import org.jetbrains.annotations.Nullable;
 import com.craftingdead.core.capability.CapabilityUtil;
 import com.craftingdead.core.world.item.equipment.Equipment;
@@ -28,9 +33,7 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.core.Holder;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
@@ -41,10 +44,10 @@ import net.minecraftforge.common.capabilities.ICapabilityProvider;
 
 public class HatItem extends EquipmentItem {
 
-  public static final UUID ARMOR_MODIFIER_ID =
-      UUID.fromString("88251241-3150-423f-95be-b3daaabd48bb");
+  public static final ResourceLocation ARMOR_MODIFIER_ID =
+      ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "hat_armor");
 
-  private final Multimap<Attribute, AttributeModifier> attributeModifiers;
+  private final Multimap<Holder<Attribute>, AttributeModifier> attributeModifiers;
 
   private final float headshotReductionPercentage;
 
@@ -67,34 +70,34 @@ public class HatItem extends EquipmentItem {
   }
 
   @Override
-  public void appendHoverText(ItemStack stack, @Nullable Level world, List<Component> lines,
+  public void appendHoverText(ItemStack stack, Item.TooltipContext world, List<Component> lines,
       TooltipFlag tooltipFlag) {
     super.appendHoverText(stack, world, lines, tooltipFlag);
     if (this.headshotReductionPercentage > 0.0F) {
       Component percentageText =
-          new TextComponent(String.format("%.0f", this.headshotReductionPercentage * 100.0F) + "%")
+          Component.literal(String.format("%.0f", this.headshotReductionPercentage * 100.0F) + "%")
               .withStyle(ChatFormatting.RED);
 
-      lines.add(new TranslatableComponent("hat.headshot_reduction")
+      lines.add(Component.translatable("hat.headshot_reduction")
           .withStyle(ChatFormatting.GRAY)
           .append(percentageText));
     }
     if (this.immuneToFlashes) {
-      lines.add(new TranslatableComponent("hat.immune_to_flashes")
+      lines.add(Component.translatable("hat.immune_to_flashes")
           .withStyle(ChatFormatting.GRAY));
     }
     if (this.immuneToGas) {
-      lines.add(new TranslatableComponent("hat.immune_to_gas")
+      lines.add(Component.translatable("hat.immune_to_gas")
           .withStyle(ChatFormatting.GRAY));
     }
     if (this.nightVision) {
-      lines.add(new TranslatableComponent("hat.has_night_vision")
+      lines.add(Component.translatable("hat.has_night_vision")
           .withStyle(ChatFormatting.GRAY));
     }
   }
 
   @Override
-  public ICapabilityProvider initCapabilities(ItemStack itemStack, @Nullable CompoundTag nbt) {
+  public ICapabilityProvider getCapabilityProvider(ItemStack itemStack) {
     return CapabilityUtil.provider(
         () -> new SimpleHat(
             this.attributeModifiers,
@@ -107,7 +110,7 @@ public class HatItem extends EquipmentItem {
 
   public static class Properties extends Item.Properties {
 
-    private final ImmutableMultimap.Builder<Attribute, AttributeModifier> attributeModifiers =
+    private final ImmutableMultimap.Builder<Holder<Attribute>, AttributeModifier> attributeModifiers =
         ImmutableMultimap.builder();
     private float headshotReductionPercentage;
     private boolean immuneToFlashes;
@@ -115,7 +118,7 @@ public class HatItem extends EquipmentItem {
     private boolean nightVision;
     private boolean waterBreathing;
 
-    public Properties attributeModifier(Attribute attribute, AttributeModifier modifier) {
+    public Properties attributeModifier(Holder<Attribute> attribute, AttributeModifier modifier) {
       this.attributeModifiers.put(attribute, modifier);
       return this;
     }

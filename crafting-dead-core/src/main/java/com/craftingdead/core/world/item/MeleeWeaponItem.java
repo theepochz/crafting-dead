@@ -18,10 +18,10 @@
 
 package com.craftingdead.core.world.item;
 
+import net.minecraft.network.chat.Component;
+
 import java.util.List;
 import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
@@ -29,15 +29,17 @@ import org.jetbrains.annotations.Nullable;
 import com.craftingdead.core.world.item.combatslot.CombatSlot;
 import com.craftingdead.core.world.item.combatslot.CombatSlotProvider;
 import com.craftingdead.core.world.item.equipment.Equipment;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import com.craftingdead.core.CraftingDead;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
@@ -47,42 +49,46 @@ public class MeleeWeaponItem extends ToolItem {
 
   private final int attackDamage;
 
-  private final Multimap<Attribute, AttributeModifier> attributeModifiers;
+  private final ItemAttributeModifiers attributeModifiers;
 
   public MeleeWeaponItem(int attackDamage, double attackSpeed, Item.Properties properties) {
     super(properties);
     this.attackDamage = attackDamage;
-    this.attributeModifiers = ImmutableMultimap.of(
-        Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_UUID,
-            "Weapon modifier", this.attackDamage, AttributeModifier.Operation.ADDITION),
-        Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_UUID,
-            "Weapon modifier", attackSpeed, AttributeModifier.Operation.ADDITION));
+    // Base on vanilla Item's default modifiers (can't call the overridden
+    // getDefaultAttributeModifiers() here - the field isn't assigned yet).
+    ItemAttributeModifiers defaults = super.getDefaultAttributeModifiers();
+    this.attributeModifiers = defaults
+        .withModifierAdded(Attributes.ATTACK_DAMAGE, new AttributeModifier(
+            ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "melee_damage"),
+            this.attackDamage, AttributeModifier.Operation.ADD_VALUE),
+            EquipmentSlotGroup.MAINHAND)
+        .withModifierAdded(Attributes.ATTACK_SPEED, new AttributeModifier(
+            ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "melee_speed"),
+            attackSpeed, AttributeModifier.Operation.ADD_VALUE),
+            EquipmentSlotGroup.MAINHAND);
   }
 
   @Override
-  public Multimap<Attribute, AttributeModifier> getAttributeModifiers(
-      EquipmentSlot equipmentSlot, ItemStack itemStack) {
-    return equipmentSlot == EquipmentSlot.MAINHAND
-        ? this.attributeModifiers
-        : super.getAttributeModifiers(equipmentSlot, itemStack);
+  public ItemAttributeModifiers getDefaultAttributeModifiers() {
+    return this.attributeModifiers;
   }
 
   @Override
-  public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip,
+  public void appendHoverText(ItemStack stack, Item.TooltipContext world, List<Component> tooltip,
       @NotNull TooltipFlag flag) {
-    tooltip.add(new TranslatableComponent("item.craftingdead.damage").append(" ").append(
-            new TranslatableComponent(String.valueOf(this.attackDamage))
+    tooltip.add(Component.translatable("item.craftingdead.damage").append(" ").append(
+            Component.translatable(String.valueOf(this.attackDamage))
                 .withStyle(style -> style.withColor(ChatFormatting.RED)))
         .withStyle(style -> style.withColor(ChatFormatting.GRAY)));
 
-    tooltip.add(new TranslatableComponent("item.craftingdead.durability").append(" ").append(
-            new TranslatableComponent(String.valueOf(stack.getMaxDamage() - stack.getDamageValue()))
+    tooltip.add(Component.translatable("item.craftingdead.durability").append(" ").append(
+            Component.translatable(String.valueOf(stack.getMaxDamage() - stack.getDamageValue()))
                 .withStyle(style -> style.withColor(ChatFormatting.RED)))
         .withStyle(style -> style.withColor(ChatFormatting.GRAY)));
   }
 
   @Override
-  public ICapabilityProvider initCapabilities(ItemStack itemStack, @Nullable CompoundTag nbt) {
+  public ICapabilityProvider getCapabilityProvider(ItemStack itemStack) {
     var combatSlotProvider = LazyOptional.of(() -> CombatSlot.MELEE);
     var equipment = LazyOptional.of(() -> Equipment.forSlot(Equipment.Slot.MELEE));
     return new ICapabilityProvider() {

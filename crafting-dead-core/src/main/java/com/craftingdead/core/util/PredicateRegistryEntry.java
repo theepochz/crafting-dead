@@ -19,10 +19,8 @@
 package com.craftingdead.core.util;
 
 import java.util.function.Predicate;
-import net.minecraftforge.registries.ForgeRegistryEntry;
 
-public class PredicateRegistryEntry<T> extends ForgeRegistryEntry<PredicateRegistryEntry<T>>
-    implements Predicate<T> {
+public class PredicateRegistryEntry<T> implements Predicate<T> {
 
   private final Predicate<T> predicate;
 

@@ -18,6 +18,8 @@
 
 package com.craftingdead.core.client.renderer.item;
 
+import net.minecraft.world.item.ItemDisplayContext;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -52,7 +54,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fml.StartupMessageManager;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.IRegistryDelegate;
 
 public class ItemRenderDispatcher implements ResourceManagerReloadListener {
 
@@ -66,7 +67,7 @@ public class ItemRenderDispatcher implements ResourceManagerReloadListener {
 
   private final Minecraft minecraft = Minecraft.getInstance();
 
-  private Map<IRegistryDelegate<Item>, CustomItemRenderer> renderers = Map.of();
+  private Map<Item, CustomItemRenderer> renderers = Map.of();
 
   private Map<ResourceLocation, Set<ResourceLocation>> materials = Map.of();
 
@@ -75,13 +76,13 @@ public class ItemRenderDispatcher implements ResourceManagerReloadListener {
   }
 
   public CustomItemRenderer getItemRenderer(Item item) {
-    return this.renderers.get(item.delegate);
+    return this.renderers.get(item);
   }
 
-  public boolean renderItem(ItemStack itemStack, ItemTransforms.TransformType transformType,
+  public boolean renderItem(ItemStack itemStack, ItemDisplayContext transformType,
       @Nullable LivingExtension<?, ?> living, PoseStack poseStack, MultiBufferSource bufferSource,
       int packedLight, int packedOverlay) {
-    var renderer = this.renderers.get(itemStack.getItem().delegate);
+    var renderer = this.renderers.get(itemStack.getItem());
     if (renderer != null && renderer.handlePerspective(itemStack, transformType)) {
       renderer.render(itemStack, transformType, living, poseStack, bufferSource,
           packedLight, packedOverlay);
@@ -96,16 +97,16 @@ public class ItemRenderDispatcher implements ResourceManagerReloadListener {
     profiler.startTick();
 
     Set<ResourceLocation> modelDependencies = new HashSet<>();
-    var renderers = ImmutableMap.<IRegistryDelegate<Item>, CustomItemRenderer>builder();
+    var renderers = ImmutableMap.<Item, CustomItemRenderer>builder();
 
     int i = DIRECTORY.length() + 1;
 
-    for (var location : resourceManager.listResources(DIRECTORY,
-        file -> file.endsWith(FILE_EXTENSION))) {
+    for (var entry : resourceManager.listResources(DIRECTORY,
+        file -> file.getPath().endsWith(FILE_EXTENSION)).entrySet()) {
+      var location = entry.getKey();
 
       var path = location.getPath();
-      var pathNoFileExtension = new ResourceLocation(location.getNamespace(),
-          path.substring(i, path.length() - PATH_SUFFIX_LENGTH));
+      var pathNoFileExtension = ResourceLocation.fromNamespaceAndPath(location.getNamespace(), path.substring(i, path.length() - PATH_SUFFIX_LENGTH));
 
       var item = ForgeRegistries.ITEMS.getValue(pathNoFileExtension);
       if (item == null) {
@@ -113,18 +114,22 @@ public class ItemRenderDispatcher implements ResourceManagerReloadListener {
         continue;
       }
 
+      var resourceOpt = resourceManager.getResource(location);
+      if (resourceOpt.isEmpty()) {
+        continue;
+      }
+      var resource = resourceOpt.get();
       try (
-          var resource = resourceManager.getResource(location);
-          var inputStream = resource.getInputStream();
+          var inputStream = resource.open();
           var reader =
               new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-        profiler.push(resource.getSourceName());
+        profiler.push(resource.sourcePackId());
         profiler.push("parse");
         var json = GsonHelper.fromJson(gson, reader, JsonElement.class);
         if (json != null) {
           var renderer = tryCreate(item, new Dynamic<>(JsonOps.INSTANCE, json));
           if (renderer != null) {
-            renderers.put(item.delegate, renderer);
+            renderers.put(item, renderer);
             modelDependencies.addAll(renderer.getModelDependencies());
           }
         } else {
@@ -158,7 +163,7 @@ public class ItemRenderDispatcher implements ResourceManagerReloadListener {
       Item item, Dynamic<?> dynamic) {
     @SuppressWarnings("unchecked")
     var properties =
-        (P) ItemRendererProperties.CODEC.parse(dynamic).getOrThrow(false, logger::error);
+        (P) ItemRendererProperties.CODEC.parse(dynamic).getOrThrow(msg -> new RuntimeException(msg));
 
     @SuppressWarnings("unchecked")
     var type = (ItemRendererType<I, P>) properties.getItemRendererType();

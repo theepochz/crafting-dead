@@ -25,7 +25,6 @@ import com.craftingdead.core.world.entity.extension.LivingExtension;
 import com.craftingdead.core.world.item.scope.Scope;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.item.Items;
 
 @Mixin(MouseHandler.class)
 public class MouseHandlerMixin {
@@ -34,7 +33,7 @@ public class MouseHandlerMixin {
       target = "Lnet/minecraft/client/player/LocalPlayer;isScoping()Z"),
       method = "turnPlayer")
   public boolean isScoping(LocalPlayer player) {
-    var vanillaScoping = player.isUsingItem() && player.getUseItem().is(Items.SPYGLASS);
+    var vanillaScoping = player.isScoping();
     return vanillaScoping || player.getCapability(LivingExtension.CAPABILITY)
         .resolve()
         .flatMap(living -> player.getMainHandItem().getCapability(Scope.CAPABILITY)

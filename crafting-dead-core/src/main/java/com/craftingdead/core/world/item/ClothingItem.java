@@ -18,6 +18,10 @@
 
 package com.craftingdead.core.world.item;
 
+import com.craftingdead.core.CraftingDead;
+
+import net.minecraft.network.chat.Component;
+
 import com.craftingdead.core.ServerConfig;
 import com.craftingdead.core.world.action.item.ItemActionType;
 import com.craftingdead.core.world.entity.extension.LivingExtension;
@@ -25,7 +29,6 @@ import com.craftingdead.core.world.entity.extension.PlayerExtension;
 import com.craftingdead.core.world.item.equipment.Equipment.Slot;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.Supplier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -44,9 +47,8 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Holder;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
@@ -64,10 +66,10 @@ public class ClothingItem extends EquipmentItem {
     HEAVY
   }
 
-  public static final UUID ARMOR_MODIFIER_ID =
-      UUID.fromString("4117e432-16f5-4eea-a4fe-127b54d39af1");
+  public static final ResourceLocation ARMOR_MODIFIER_ID =
+      ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "clothing_armor");
 
-  private final Multimap<Attribute, AttributeModifier> attributeModifiers;
+  private final Multimap<Holder<Attribute>, AttributeModifier> attributeModifiers;
   private final boolean fireImmunity;
   private final boolean enhancesSwimming;
   private final Supplier<? extends ItemActionType<?>> itemActionType;
@@ -92,38 +94,39 @@ public class ClothingItem extends EquipmentItem {
   }
 
   @Override
-  public void appendHoverText(ItemStack stack, Level world, List<Component> lines, TooltipFlag tooltipFlag) {
+  public void appendHoverText(ItemStack stack, Item.TooltipContext world, List<Component> lines, TooltipFlag tooltipFlag) {
     super.appendHoverText(stack, world, lines, tooltipFlag);
     switch (this.clothingType) {
-      case CASUAL -> lines.add(new TranslatableComponent("clothing.protection.level")
+      case CASUAL -> lines.add(Component.translatable("clothing.protection.level")
           .withStyle(ChatFormatting.GRAY)
           .append(" ")
-          .append(new TranslatableComponent("clothing.casual")
+          .append(Component.translatable("clothing.casual")
               .withStyle(ChatFormatting.RED)));
-      case UTILITY -> lines.add(new TranslatableComponent("clothing.protection.level")
+      case UTILITY -> lines.add(Component.translatable("clothing.protection.level")
           .withStyle(ChatFormatting.GRAY)
           .append(" ")
-          .append(new TranslatableComponent("clothing.utility")
+          .append(Component.translatable("clothing.utility")
               .withStyle(ChatFormatting.RED)));
-      case MILITARY -> lines.add(new TranslatableComponent("clothing.protection.level")
+      case MILITARY -> lines.add(Component.translatable("clothing.protection.level")
           .withStyle(ChatFormatting.GRAY)
           .append(" ")
-          .append(new TranslatableComponent("clothing.military")
+          .append(Component.translatable("clothing.military")
               .withStyle(ChatFormatting.RED)));
     }
     if (this.fireImmunity) {
-      lines.add(new TranslatableComponent("clothing.immune_to_fire")
+      lines.add(Component.translatable("clothing.immune_to_fire")
           .withStyle(ChatFormatting.GRAY));
     }
   }
 
   @Override
-  public ICapabilityProvider initCapabilities(ItemStack itemStack, @Nullable CompoundTag nbt) {
+  public ICapabilityProvider getCapabilityProvider(ItemStack itemStack) {
     return CapabilityUtil.provider(
         () -> new SimpleClothing(this.attributeModifiers, this.fireImmunity, this.enhancesSwimming,
-            new ResourceLocation(Objects.requireNonNull(this.getRegistryName()).getNamespace(),
+            ResourceLocation.fromNamespaceAndPath(
+            Objects.requireNonNull(this.builtInRegistryHolder().key().location()).getNamespace(),
                 "textures/clothing/"
-                    + this.getRegistryName().getPath() + "_" + "default" + ".png")),
+                    + this.builtInRegistryHolder().key().location().getPath() + "_" + "default" + ".png")),
         Equipment.CAPABILITY);
   }
 
@@ -143,7 +146,7 @@ public class ClothingItem extends EquipmentItem {
   @Override
   public @NotNull InteractionResult interactLivingEntity(@NotNull ItemStack itemStack,
       Player player, @NotNull LivingEntity targetEntity, @NotNull InteractionHand hand) {
-    if (!player.getLevel().isClientSide()) {
+    if (!player.level().isClientSide()) {
       var performer = PlayerExtension.getOrThrow(player);
       var target = LivingExtension.getOrThrow(targetEntity);
       if (this.getActionType().createEntityAction(performer, target, hand)
@@ -158,7 +161,7 @@ public class ClothingItem extends EquipmentItem {
   @Override
   public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player,
       @NotNull InteractionHand hand) {
-    if (!player.getLevel().isClientSide()) {
+    if (!player.level().isClientSide()) {
       var performer = PlayerExtension.getOrThrow(player);
       var hitResult = getPlayerPOVHitResult(level, player, ClipContext.Fluid.ANY);
       if (hitResult.getType() == HitResult.Type.BLOCK
@@ -180,18 +183,19 @@ public class ClothingItem extends EquipmentItem {
   }
 
   @Override
-  public int getUseDuration(@NotNull ItemStack itemStack) {
+  public int getUseDuration(@NotNull ItemStack itemStack,
+      @NotNull net.minecraft.world.entity.LivingEntity entity) {
     return this.getActionType().getDurationTicks();
   }
 
   public static class Properties extends Item.Properties {
 
-    private final ImmutableMultimap.Builder<Attribute, AttributeModifier> attributeModifiers =
+    private final ImmutableMultimap.Builder<Holder<Attribute>, AttributeModifier> attributeModifiers =
         ImmutableMultimap.builder();
     private boolean fireImmunity;
     private boolean enhancesSwimming;
 
-    public Properties attributeModifier(Attribute attribute, AttributeModifier modifier) {
+    public Properties attributeModifier(Holder<Attribute> attribute, AttributeModifier modifier) {
       this.attributeModifiers.put(attribute, modifier);
       return this;
     }

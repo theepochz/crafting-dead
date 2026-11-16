@@ -18,10 +18,11 @@
 
 package com.craftingdead.core.client.gui;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.util.Mth;
 
 public class SimpleButton extends Button {
@@ -29,7 +30,7 @@ public class SimpleButton extends Button {
   private int backgroundColour = 0x333333;
 
   public SimpleButton(int x, int y, int width, int height, Component text, OnPress action) {
-    super(x, y, width, height, text, action);
+    super(Button.builder(text, action).bounds(x, y, width, height));
     this.setFGColor(0xE3BE2B);
   }
 
@@ -38,19 +39,17 @@ public class SimpleButton extends Button {
   }
 
   @Override
-  public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+  protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY,
+      float partialTicks) {
     final Minecraft minecraft = Minecraft.getInstance();
-    fill(matrixStack, this.x, this.y, this.x + this.width + 1, this.y + this.height + 1,
-        0x33000000);
-    fill(matrixStack, this.x, this.y, this.x + this.width, this.y + this.height,
+    final int x = this.getX();
+    final int y = this.getY();
+    guiGraphics.fill(x, y, x + this.width + 1, y + this.height + 1, 0x33000000);
+    guiGraphics.fill(x, y, x + this.width, y + this.height,
         this.backgroundColour | Mth.ceil(this.alpha * 255.0F) << 24);
-    drawCenteredString(matrixStack, minecraft.font, this.getMessage(),
-        this.x + this.width / 2, this.y + (this.height - 8) / 2,
+    guiGraphics.drawCenteredString(minecraft.font, this.getMessage(),
+        x + this.width / 2, y + (this.height - 8) / 2,
         (this.active ? this.isHovered ? this.packedFGColor : 0xFFFFFF : 0xA0A0A0)
             | Mth.ceil(this.alpha * 255.0F) << 24);
-    // RenderSystem.enableBlend();
-    // RenderSystem.defaultBlendFunc();
-    // RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
-    // GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
   }
 }

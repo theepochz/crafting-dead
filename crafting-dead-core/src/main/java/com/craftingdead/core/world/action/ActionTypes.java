@@ -18,6 +18,8 @@
 
 package com.craftingdead.core.world.action;
 
+import net.minecraft.network.chat.Component;
+
 import com.craftingdead.core.CraftingDead;
 import com.craftingdead.core.ServerConfig;
 import com.craftingdead.core.tags.ModItemTags;
@@ -33,7 +35,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Registry;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
@@ -52,15 +53,14 @@ import net.minecraftforge.registries.RegistryObject;
 public class ActionTypes {
 
   public static final ResourceKey<Registry<ActionType<?>>> REGISTRY_KEY =
-      ResourceKey.createRegistryKey(new ResourceLocation(CraftingDead.ID, "action_type"));
+      ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "action_type"));
 
   public static final DeferredRegister<ActionType<?>> deferredRegister =
       DeferredRegister.create(REGISTRY_KEY, CraftingDead.ID);
 
   @SuppressWarnings("unchecked")
   public static final Supplier<IForgeRegistry<ActionType<?>>> REGISTRY =
-      deferredRegister.makeRegistry((Class<ActionType<?>>) (Class<?>) ActionType.class,
-          RegistryBuilder::new);
+      deferredRegister.makeRegistry(RegistryBuilder::new);
 
   public static final RegistryObject<ActionType<?>> MAGAZINE_RELOAD =
       deferredRegister.register("magazine_reload",
@@ -111,7 +111,7 @@ public class ActionTypes {
 
                 if (performer.entity() instanceof Player player) {
                   player.displayClientMessage(
-                      new TranslatableComponent("message.low_health",
+                      Component.translatable("message.low_health",
                           targetEntity.getDisplayName()).withStyle(ChatFormatting.RED),
                       true);
                 }
@@ -121,7 +121,7 @@ public class ActionTypes {
               .forItem(ModItems.SYRINGE)
               .duration(16)
               .customAction((performer, target) -> target.entity().hurt(
-                  DamageSource.mobAttack(target.entity()), 2.0F), 1.0F)
+                  target.entity().level().damageSources().mobAttack(target.entity()), 2.0F), 1.0F)
               .resultItem(ModItems.BLOOD_SYRINGE)
               .build());
 
@@ -141,7 +141,7 @@ public class ActionTypes {
               .duration(16)
               .resultItem(ModItems.SYRINGE)
               .useResultItemInCreative(false)
-              .effect(() -> new MobEffectInstance(ModMobEffects.ADRENALINE.get(), 
+              .effect(() -> new MobEffectInstance(ModMobEffects.ADRENALINE.getHolder().orElseThrow(), 
                   ServerConfig.instance.adrenalineDurationTicks.get(), 1))
               .build());
 
@@ -168,7 +168,7 @@ public class ActionTypes {
   public static final RegistryObject<EntityItemActionType<?>> USE_CLEAN_RAG =
       deferredRegister.register("use_clean_rag",
           () -> EntityItemActionType
-              .builder(TargetSelector.SELF_OR_OTHERS.hasEffect(ModMobEffects.BLEEDING))
+              .builder(TargetSelector.SELF_OR_OTHERS.hasEffect(() -> ModMobEffects.BLEEDING.getHolder().orElseThrow()))
               .forItem(ModItems.CLEAN_RAG)
               .duration(ServerConfig.instance.cleanRagDurationTicks.get())
               .resultItem(ModItems.BLOODY_RAG)
@@ -194,7 +194,7 @@ public class ActionTypes {
               .customAction((performer, target) -> {
                 target.setHandcuffs(performer.mainHandItem().copy());
                 target.entity().displayClientMessage(
-                    new TranslatableComponent("handcuffs.handcuffed",
+                    Component.translatable("handcuffs.handcuffed",
                         performer.entity().getDisplayName())
                             .withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
                     true);

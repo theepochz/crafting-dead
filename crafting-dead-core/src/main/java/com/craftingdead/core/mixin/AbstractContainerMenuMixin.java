@@ -62,17 +62,17 @@ public class AbstractContainerMenuMixin {
     if (clazz.isAnonymousClass() && clazz.getEnclosingClass() == ServerPlayer.class) {
       Object parent;
       try {
-        // this$0
+        // this$0 (mojmap name - 1.21+ runs on official mappings at runtime)
         parent = ObfuscationReflectionHelper.getPrivateValue(
             (Class<ContainerSynchronizer>) this.synchronizer.getClass(), this.synchronizer,
-            "f_143433_");
-      } catch (ObfuscationReflectionHelper.UnableToAccessFieldException e) {
-        logger.error("Failed to reflect", e);
+            "this$0");
+      } catch (ObfuscationReflectionHelper.UnableToAccessFieldException | IllegalArgumentException e) {
+        logger.debug("Unable to reflect container synchronizer owner", e);
         return ItemStack.matches(lastStack, currentStack);
       }
 
       if (parent instanceof ServerPlayer player) {
-        if (!currentStack.equals(lastStack, true)) {
+        if (!ItemStack.isSameItemSameComponents(currentStack, lastStack)) {
           return false;
         }
 
@@ -91,10 +91,8 @@ public class AbstractContainerMenuMixin {
                   }
                 }
               }
-              NetworkChannel.PLAY.getSimpleChannel().send(
-                  PacketDistributor.PLAYER.with(() -> player),
-                  new SyncGunContainerSlotMessage(
-                      player.getId(), slotIndex, gun, false));
+              NetworkChannel.PLAY.getSimpleChannel().send(new SyncGunContainerSlotMessage(
+                      player.getId(), slotIndex, gun, false), PacketDistributor.PLAYER.with(player));
             });
         return true;
       }

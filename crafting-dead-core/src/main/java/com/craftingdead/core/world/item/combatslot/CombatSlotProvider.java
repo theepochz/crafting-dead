@@ -18,11 +18,13 @@
 
 package com.craftingdead.core.world.item.combatslot;
 
+import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 
 @FunctionalInterface
+@AutoRegisterCapability
 public interface CombatSlotProvider {
   
   Capability<CombatSlotProvider> CAPABILITY = CapabilityManager.get(new CapabilityToken<>() {});

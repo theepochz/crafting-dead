@@ -36,7 +36,7 @@ import net.minecraftforge.registries.RegistryObject;
 public class ModEntityTypes {
 
   public static final DeferredRegister<EntityType<?>> deferredRegister =
-      DeferredRegister.create(ForgeRegistries.ENTITIES, CraftingDead.ID);
+      DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, CraftingDead.ID);
 
   public static final RegistryObject<EntityType<C4Explosive>> C4_EXPLOSIVE =
       deferredRegister.register("c4_explosive", () -> create("c4_explosive",
@@ -94,6 +94,6 @@ public class ModEntityTypes {
 
   private static <T extends Entity> EntityType<T> create(String registryName,
       EntityType.Builder<T> builder) {
-    return builder.build(new ResourceLocation(CraftingDead.ID, registryName).toString());
+    return builder.build(ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, registryName).toString());
   }
 }

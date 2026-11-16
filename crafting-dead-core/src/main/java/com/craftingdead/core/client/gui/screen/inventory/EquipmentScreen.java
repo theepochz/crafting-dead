@@ -18,6 +18,8 @@
 
 package com.craftingdead.core.client.gui.screen.inventory;
 
+import net.minecraft.network.chat.Component;
+
 import com.craftingdead.core.CraftingDead;
 import com.craftingdead.core.client.ClientDist;
 import com.craftingdead.core.client.gui.widget.button.CompositeButton;
@@ -29,13 +31,10 @@ import com.craftingdead.core.world.item.ModItems;
 import com.craftingdead.core.world.item.equipment.Equipment;
 import com.craftingdead.core.world.item.gun.Gun;
 import com.craftingdead.core.world.item.gun.skin.Paint;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
@@ -45,7 +44,7 @@ import net.minecraft.world.item.ItemStack;
 public class EquipmentScreen extends EffectRenderingInventoryScreen<EquipmentMenu> {
 
   private static final ResourceLocation BACKGROUND =
-      new ResourceLocation(CraftingDead.ID, "textures/gui/container/equipment.png");
+      ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "textures/gui/container/equipment.png");
 
   private int oldMouseX;
   private int oldMouseY;
@@ -69,7 +68,7 @@ public class EquipmentScreen extends EffectRenderingInventoryScreen<EquipmentMen
         .setInactiveAtlasPos(183, 240)
         .setAction((button) -> {
           NetworkChannel.PLAY.getSimpleChannel()
-              .sendToServer(new OpenStorageMessage(Equipment.Slot.VEST));
+              .send(new OpenStorageMessage(Equipment.Slot.VEST), net.minecraftforge.network.PacketDistributor.SERVER.noArg());
           this.transitioning = true;
         }).build();
     this.addRenderableWidget(this.vestButton);
@@ -80,7 +79,7 @@ public class EquipmentScreen extends EffectRenderingInventoryScreen<EquipmentMen
         .setInactiveAtlasPos(183, 240)
         .setAction((button) -> {
           NetworkChannel.PLAY.getSimpleChannel()
-              .sendToServer(new OpenStorageMessage(Equipment.Slot.BACKPACK));
+              .send(new OpenStorageMessage(Equipment.Slot.BACKPACK), net.minecraftforge.network.PacketDistributor.SERVER.noArg());
           this.transitioning = true;
         }).build();
     this.addRenderableWidget(this.backpackButton);
@@ -88,9 +87,9 @@ public class EquipmentScreen extends EffectRenderingInventoryScreen<EquipmentMen
   }
 
   @Override
-  public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-    super.render(matrixStack, mouseX, mouseY, partialTicks);
-    this.renderTooltip(matrixStack, mouseX, mouseY);
+  public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    super.render(graphics, mouseX, mouseY, partialTicks);
+    this.renderTooltip(graphics, mouseX, mouseY);
     this.oldMouseX = mouseX;
     this.oldMouseY = mouseY;
   }
@@ -122,21 +121,21 @@ public class EquipmentScreen extends EffectRenderingInventoryScreen<EquipmentMen
   }
 
   @Override
-  protected void renderLabels(PoseStack matrixStack, int x, int y) {}
+  protected void renderLabels(GuiGraphics graphics, int x, int y) {}
 
   @Override
-  protected void renderBg(PoseStack poseStack, float partialTicks, int mouseX, int mouseY) {
-    this.renderBackground(poseStack);
-    RenderSystem.setShaderTexture(0, BACKGROUND);
+  protected void renderBg(GuiGraphics graphics, float partialTicks, int mouseX, int mouseY) {
+    // Note: don't call renderBackground() here - in 1.21+ AbstractContainerScreen
+    // delegates renderBackground to renderBg, causing infinite recursion.
 
-    this.blit(poseStack, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+    graphics.blit(BACKGROUND, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
     // Hide the icon of equipment slots if they have an item.
     // Starting at index 35 to skip the player inventory/
     for (int i = 35; i < this.menu.slots.size(); i++) {
       var slot = this.menu.slots.get(i);
       if (slot.hasItem()) {
-        this.blit(poseStack, slot.x + this.leftPos, slot.y + this.topPos, 8, 141, 16, 16);
+        graphics.blit(BACKGROUND, slot.x + this.leftPos, slot.y + this.topPos, 8, 141, 16, 16);
       }
     }
 
@@ -152,27 +151,27 @@ public class EquipmentScreen extends EffectRenderingInventoryScreen<EquipmentMen
       if ((!this.menu.isCraftingInventoryEmpty() && this.menu.isCraftable())
           || (!this.menu.getCarried().isEmpty() && carriedItemAccepted)) {
         // Green outline
-        this.blit(poseStack, gunSlotX, gunSlotY, 165, 238, 16, 16);
+        graphics.blit(BACKGROUND, gunSlotX, gunSlotY, 165, 238, 16, 16);
       } else if (!this.menu.getCarried().isEmpty() && !carriedItemAccepted) {
         // Red outline
-        this.blit(poseStack, gunSlotX, gunSlotY, 147, 238, 16, 16);
+        graphics.blit(BACKGROUND, gunSlotX, gunSlotY, 147, 238, 16, 16);
       }
     });
 
-    this.blit(poseStack, this.leftPos, this.topPos - 28, 183, 0, 28, 35);
-    this.blit(poseStack, this.leftPos + 30, this.topPos - 28, 211, 0, 29, 28);
-    this.renderFakeItems();
-    this.renderInteractiveTooltips(poseStack, mouseX, mouseY);
-    this.renderPlayerEntity();
+    graphics.blit(BACKGROUND, this.leftPos, this.topPos - 28, 183, 0, 28, 35);
+    graphics.blit(BACKGROUND, this.leftPos + 30, this.topPos - 28, 211, 0, 29, 28);
+    this.renderFakeItems(graphics);
+    this.renderInteractiveTooltips(graphics, mouseX, mouseY);
+    this.renderPlayerEntity(graphics);
   }
 
   @Override
   public boolean mouseClicked(double mouseX, double mouseY, int button) {
     if (this.isMouseOver(this.leftPos + 30, this.topPos - 28, 29, 28, mouseX, mouseY)) {
       if (this.minecraft != null && this.minecraft.player != null) {
-        this.minecraft.player.playSound(SoundEvents.UI_BUTTON_CLICK, 0.2F, 1.0F);
+        this.minecraft.player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.2F, 1.0F);
       }
-      NetworkChannel.PLAY.getSimpleChannel().sendToServer(new OpenCraftingMenuMessage());
+      NetworkChannel.PLAY.getSimpleChannel().send(new OpenCraftingMenuMessage(), net.minecraftforge.network.PacketDistributor.SERVER.noArg());
       return true;
     }
     return super.mouseClicked(mouseX, mouseY, button);
@@ -190,23 +189,23 @@ public class EquipmentScreen extends EffectRenderingInventoryScreen<EquipmentMen
   /**
    * Renders fake items in the GUI.
    */
-  private void renderFakeItems() {
-    this.itemRenderer.renderAndDecorateFakeItem(new ItemStack(ModItems.MEDIUM_BLUE_BACKPACK.get()),
+  private void renderFakeItems(GuiGraphics graphics) {
+    graphics.renderItem(new ItemStack(ModItems.MEDIUM_BLUE_BACKPACK.get()),
         this.leftPos + 6, this.topPos - 20);
-    this.itemRenderer.renderAndDecorateFakeItem(new ItemStack(ModItems.PICKAXE.get()),
+    graphics.renderItem(new ItemStack(ModItems.PICKAXE.get()),
         this.leftPos + 36, this.topPos - 22);
   }
 
   /**
    * Renders tooltips for interactive elements based on mouse position.
    */
-  private void renderInteractiveTooltips(PoseStack poseStack, int mouseX, int mouseY) {
+  private void renderInteractiveTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
     if (this.isMouseOver(this.leftPos, this.topPos - 28, 29, 28, mouseX, mouseY)) {
-      this.renderTooltip(poseStack, new TranslatableComponent("inventory_inventory.information"),
+      graphics.renderTooltip(this.font, Component.translatable("inventory_inventory.information"),
           mouseX, mouseY);
     }
     if (this.isMouseOver(this.leftPos + 30, this.topPos - 28, 29, 28, mouseX, mouseY)) {
-      this.renderTooltip(poseStack, new TranslatableComponent("inventory_crafting.information"),
+      graphics.renderTooltip(this.font, Component.translatable("inventory_crafting.information"),
           mouseX, mouseY);
     }
   }
@@ -214,10 +213,13 @@ public class EquipmentScreen extends EffectRenderingInventoryScreen<EquipmentMen
   /**
    * Renders the player's 3D model in the crafting screen.
    */
-  private void renderPlayerEntity() {
+  private void renderPlayerEntity(GuiGraphics graphics) {
     if (this.minecraft != null && this.minecraft.player != null) {
-      InventoryScreen.renderEntityInInventory(this.leftPos + 51, this.topPos + 72, 30,
-          (this.leftPos + 51) - this.oldMouseX, (this.topPos + 75 - 50) - this.oldMouseY,
+      InventoryScreen.renderEntityInInventoryFollowsMouse(graphics,
+          this.leftPos + 51, this.topPos + 72, 30,
+          (this.leftPos + 51) - this.oldMouseX,
+          (this.topPos + 75 - 50) - this.oldMouseY,
+          0.0F, 0.0F, 1.0F,
           this.minecraft.player
       );
     }

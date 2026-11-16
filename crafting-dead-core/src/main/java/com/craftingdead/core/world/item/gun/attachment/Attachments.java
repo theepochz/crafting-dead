@@ -33,13 +33,13 @@ import net.minecraftforge.registries.RegistryObject;
 public class Attachments {
 
   public static final ResourceKey<Registry<Attachment>> REGISTRY_KEY =
-      ResourceKey.createRegistryKey(new ResourceLocation(CraftingDead.ID, "attachment"));
+      ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "attachment"));
 
   public static final DeferredRegister<Attachment> deferredRegister =
       DeferredRegister.create(REGISTRY_KEY, CraftingDead.ID);
 
   public static final Supplier<IForgeRegistry<Attachment>> registry =
-      deferredRegister.makeRegistry(Attachment.class, RegistryBuilder::new);
+      deferredRegister.makeRegistry(RegistryBuilder::new);
 
   public static final RegistryObject<Attachment> RED_DOT_SIGHT =
       deferredRegister.register("red_dot_sight",

@@ -125,7 +125,7 @@ public abstract class AbstractReloadAction extends TimedAction {
       if (this.gun.getReloadSound().isPresent()) {
         // Stop reload sound
         Minecraft.getInstance().getSoundManager()
-            .stop(this.gun.getReloadSound().get().getRegistryName(), SoundSource.PLAYERS);
+            .stop(this.gun.getReloadSound().get().getLocation(), SoundSource.PLAYERS);
       }
       if (this.animation != null) {
         this.animation.remove();

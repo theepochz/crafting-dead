@@ -20,6 +20,7 @@ package com.craftingdead.core.world.item;
 
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.core.NonNullList;
@@ -33,13 +34,14 @@ public class ItemUtils {
    * @param name the name of the tag list in the compound
    * @param inventory the inventory
    */
-  public static void saveInventory(CompoundTag compound, String name, Container inventory) {
+  public static void saveInventory(HolderLookup.Provider provider, CompoundTag compound,
+      String name, Container inventory) {
     ListTag tagList = new ListTag();
     for (int i = 0; i < inventory.getContainerSize(); i++) {
       if (!inventory.getItem(i).isEmpty()) {
         CompoundTag slot = new CompoundTag();
         slot.putInt("slot", i);
-        inventory.getItem(i).save(slot);
+        inventory.getItem(i).save(provider, slot);
         tagList.add(slot);
       }
     }
@@ -53,14 +55,14 @@ public class ItemUtils {
    * @param name the name of the tag list in the compound
    * @param inventory the item list
    */
-  public static void saveInventory(CompoundTag compound, String name,
-      NonNullList<ItemStack> inventory) {
+  public static void saveInventory(HolderLookup.Provider provider, CompoundTag compound,
+      String name, NonNullList<ItemStack> inventory) {
     ListTag tagList = new ListTag();
     for (int i = 0; i < inventory.size(); i++) {
       if (!inventory.get(i).isEmpty()) {
         CompoundTag slot = new CompoundTag();
         slot.putInt("slot", i);
-        inventory.get(i).save(slot);
+        inventory.get(i).save(provider, slot);
         tagList.add(slot);
       }
     }
@@ -74,8 +76,9 @@ public class ItemUtils {
    * @param name the name of the tag list in the compound
    * @param list the item list
    */
-  public static void saveItemList(CompoundTag compound, String name, NonNullList<ItemStack> list) {
-    saveItemList(compound, name, list, true);
+  public static void saveItemList(HolderLookup.Provider provider, CompoundTag compound,
+      String name, NonNullList<ItemStack> list) {
+    saveItemList(provider, compound, name, list, true);
   }
 
   /**
@@ -86,14 +89,14 @@ public class ItemUtils {
    * @param list the item list
    * @param includeEmpty if empty item stacks should be included
    */
-  public static void saveItemList(CompoundTag compound, String name, NonNullList<ItemStack> list,
-      boolean includeEmpty) {
+  public static void saveItemList(HolderLookup.Provider provider, CompoundTag compound,
+      String name, NonNullList<ItemStack> list, boolean includeEmpty) {
     ListTag itemList = new ListTag();
     for (ItemStack stack : list) {
       if (!includeEmpty && stack.isEmpty()) {
         continue;
       }
-      itemList.add(stack.save(new CompoundTag()));
+      itemList.add(stack.save(provider, new CompoundTag()));
     }
     compound.put(name, itemList);
   }
@@ -106,7 +109,8 @@ public class ItemUtils {
    * @param name the name of the tag list in the compound
    * @param inv the inventory
    */
-  public static void readInventory(CompoundTag compound, String name, Container inv) {
+  public static void readInventory(HolderLookup.Provider provider, CompoundTag compound,
+      String name, Container inv) {
     if (!compound.contains(name)) {
       return;
     }
@@ -116,7 +120,7 @@ public class ItemUtils {
       int j = slot.getInt("slot");
 
       if (j >= 0 && j < inv.getContainerSize()) {
-        inv.setItem(j, ItemStack.of(slot));
+        inv.setItem(j, ItemStack.parseOptional(provider, slot));
       }
     }
   }
@@ -129,8 +133,8 @@ public class ItemUtils {
    * @param name the name of the tag list in the compound
    * @param inventory the item list
    */
-  public static void readInventory(CompoundTag compound, String name,
-      NonNullList<ItemStack> inventory) {
+  public static void readInventory(HolderLookup.Provider provider, CompoundTag compound,
+      String name, NonNullList<ItemStack> inventory) {
     if (!compound.contains(name)) {
       return;
     }
@@ -142,7 +146,7 @@ public class ItemUtils {
       int j = slot.getInt("slot");
 
       if (j >= 0 && j < inventory.size()) {
-        inventory.set(j, ItemStack.of(slot));
+        inventory.set(j, ItemStack.parseOptional(provider, slot));
       }
     }
   }
@@ -155,8 +159,8 @@ public class ItemUtils {
    * @param includeEmpty if empty stacks should be included
    * @return the item list
    */
-  public static NonNullList<ItemStack> readItemList(CompoundTag compound, String name,
-      boolean includeEmpty) {
+  public static NonNullList<ItemStack> readItemList(HolderLookup.Provider provider,
+      CompoundTag compound, String name, boolean includeEmpty) {
     NonNullList<ItemStack> items = NonNullList.create();
     if (!compound.contains(name)) {
       return items;
@@ -164,7 +168,7 @@ public class ItemUtils {
 
     ListTag itemList = compound.getList(name, 10);
     for (int i = 0; i < itemList.size(); i++) {
-      ItemStack item = ItemStack.of(itemList.getCompound(i));
+      ItemStack item = ItemStack.parseOptional(provider, itemList.getCompound(i));
       if (!includeEmpty) {
         if (!item.isEmpty()) {
           items.add(item);
@@ -183,8 +187,9 @@ public class ItemUtils {
    * @param name the name of the tag list in the compound
    * @return the item list
    */
-  public static NonNullList<ItemStack> readItemList(CompoundTag compound, String name) {
-    return readItemList(compound, name, true);
+  public static NonNullList<ItemStack> readItemList(HolderLookup.Provider provider,
+      CompoundTag compound, String name) {
+    return readItemList(provider, compound, name, true);
   }
 
   /**
@@ -194,7 +199,8 @@ public class ItemUtils {
    * @param name the name of the tag list in the compound
    * @param list the item list
    */
-  public static void readItemList(CompoundTag compound, String name, NonNullList<ItemStack> list) {
+  public static void readItemList(HolderLookup.Provider provider, CompoundTag compound,
+      String name, NonNullList<ItemStack> list) {
     if (!compound.contains(name)) {
       return;
     }
@@ -204,7 +210,7 @@ public class ItemUtils {
       if (i >= list.size()) {
         break;
       }
-      list.set(i, ItemStack.of(itemList.getCompound(i)));
+      list.set(i, ItemStack.parseOptional(provider, itemList.getCompound(i)));
     }
   }
 }

@@ -18,19 +18,18 @@
 
 package com.craftingdead.core.world.action;
 
+import net.minecraft.network.chat.Component;
+
 import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 import com.craftingdead.core.world.entity.extension.LivingExtension;
 import it.unimi.dsi.fastutil.floats.FloatUnaryOperator;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
-
 public interface ProgressBar {
 
   /**
    * The message to display to a {@link LivingExtension} that is monitoring the action.
    * 
-   * @return a {@link ITextComponent} instance
+   * @return a {@link IComponent} instance
    */
   Component getMessage();
 
@@ -55,7 +54,7 @@ public interface ProgressBar {
     return new ProgressBar() {
       @Override
       public Component getMessage() {
-        return new TranslatableComponent(actionType.makeDescriptionId() + ".message");
+        return Component.translatable(actionType.makeDescriptionId() + ".message");
       }
 
       @Override

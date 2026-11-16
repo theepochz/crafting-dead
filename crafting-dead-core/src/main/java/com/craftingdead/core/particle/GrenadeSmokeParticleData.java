@@ -18,50 +18,29 @@
 
 package com.craftingdead.core.particle;
 
-import java.util.Locale;
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
 
 public class GrenadeSmokeParticleData implements ParticleOptions {
 
-  public static final Codec<GrenadeSmokeParticleData> CODEC =
-      RecordCodecBuilder.create(instance -> instance
+  public static final MapCodec<GrenadeSmokeParticleData> MAP_CODEC =
+      RecordCodecBuilder.mapCodec(instance -> instance
           .group(Codec.FLOAT.fieldOf("red").forGetter(GrenadeSmokeParticleData::getRed),
               Codec.FLOAT.fieldOf("green").forGetter(GrenadeSmokeParticleData::getGreen),
               Codec.FLOAT.fieldOf("blue").forGetter(GrenadeSmokeParticleData::getBlue),
               Codec.FLOAT.fieldOf("scale").forGetter(GrenadeSmokeParticleData::getScale))
           .apply(instance, GrenadeSmokeParticleData::new));
 
-  @SuppressWarnings("deprecation")
-  public static final ParticleOptions.Deserializer<GrenadeSmokeParticleData> DESERIALIZER =
-      new ParticleOptions.Deserializer<GrenadeSmokeParticleData>() {
-        @Override
-        public GrenadeSmokeParticleData fromCommand(
-            ParticleType<GrenadeSmokeParticleData> particleType, StringReader stringReader)
-            throws CommandSyntaxException {
-          stringReader.expect(' ');
-          float red = stringReader.readFloat();
-          stringReader.expect(' ');
-          float green = stringReader.readFloat();
-          stringReader.expect(' ');
-          float blue = stringReader.readFloat();
-          stringReader.expect(' ');
-          float scale = stringReader.readFloat();
-          return new GrenadeSmokeParticleData(red, green, blue, scale);
-        }
-
-        @Override
-        public GrenadeSmokeParticleData fromNetwork(ParticleType<GrenadeSmokeParticleData> particleType,
-            FriendlyByteBuf packetBuffer) {
-          return new GrenadeSmokeParticleData(packetBuffer.readFloat(), packetBuffer.readFloat(),
-              packetBuffer.readFloat(), packetBuffer.readFloat());
-        }
-      };
+  public static final StreamCodec<RegistryFriendlyByteBuf, GrenadeSmokeParticleData> STREAM_CODEC =
+      StreamCodec.ofMember(GrenadeSmokeParticleData::writeToNetwork,
+          GrenadeSmokeParticleData::readFromNetwork);
 
   private final float red;
   private final float green;
@@ -75,18 +54,21 @@ public class GrenadeSmokeParticleData implements ParticleOptions {
     this.scale = scale;
   }
 
-  @Override
-  public void writeToNetwork(FriendlyByteBuf packetBuffer) {
-    packetBuffer.writeFloat(this.red);
-    packetBuffer.writeFloat(this.green);
-    packetBuffer.writeFloat(this.blue);
-    packetBuffer.writeFloat(this.scale);
+  private static GrenadeSmokeParticleData readFromNetwork(RegistryFriendlyByteBuf buf) {
+    return new GrenadeSmokeParticleData(buf.readFloat(), buf.readFloat(), buf.readFloat(),
+        buf.readFloat());
   }
 
-  @Override
+  private void writeToNetwork(RegistryFriendlyByteBuf buf) {
+    buf.writeFloat(this.red);
+    buf.writeFloat(this.green);
+    buf.writeFloat(this.blue);
+    buf.writeFloat(this.scale);
+  }
+
   public String writeToString() {
-    return String.format(Locale.ROOT, "%s %.2f %.2f %.2f %.2f",
-        this.getType().getRegistryName(), this.red, this.green, this.blue, this.scale);
+    return String.format(java.util.Locale.ROOT, "%s %.2f %.2f %.2f %.2f",
+        BuiltInRegistries.PARTICLE_TYPE.getKey(this.getType()), this.red, this.green, this.blue, this.scale);
   }
 
   @Override

@@ -20,6 +20,7 @@ package com.craftingdead.core.world.item.gun.magazine;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import com.craftingdead.core.world.item.MagazineItem;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 
@@ -35,14 +36,14 @@ public class MagazineImpl implements Magazine {
   }
 
   @Override
-  public CompoundTag serializeNBT() {
+  public CompoundTag serializeNBT(HolderLookup.Provider provider) {
     CompoundTag nbt = new CompoundTag();
     nbt.putInt("size", this.size.get());
     return nbt;
   }
 
   @Override
-  public void deserializeNBT(CompoundTag nbt) {
+  public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
     this.size.set(nbt.getInt("size"));
   }
 

@@ -25,7 +25,6 @@ import com.craftingdead.core.world.entity.grenade.FireGrenadeEntity.BounceSound;
 import com.craftingdead.core.world.item.GrenadeItem;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -34,14 +33,12 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.EntityDamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
 
 public abstract class Grenade extends BounceableProjectileEntity {
 
@@ -125,9 +122,9 @@ public abstract class Grenade extends BounceableProjectileEntity {
 
   @Override
   public boolean hurt(DamageSource source, float amount) {
-    if (source.isProjectile()) {
-      EntityDamageSource entitySource = (EntityDamageSource) source;
-      this.setDeltaMovement(entitySource.getEntity().getLookAngle().scale(1.5D));
+    if (source.is(net.minecraft.tags.DamageTypeTags.IS_PROJECTILE)
+        && source.getEntity() != null) {
+      this.setDeltaMovement(source.getEntity().getLookAngle().scale(1.5D));
     }
     return super.hurt(source, amount);
   }
@@ -135,8 +132,8 @@ public abstract class Grenade extends BounceableProjectileEntity {
   @Override
   public void onSurfaceHit(BlockHitResult blockRayTraceResult) {
     var bounceSound = this.getBounceSound(blockRayTraceResult);
-    if (this.level.isClientSide()) {
-      this.level.playLocalSound(this.getX(), this.getY(), this.getZ(),
+    if (this.level().isClientSide()) {
+      this.level().playLocalSound(this.getX(), this.getY(), this.getZ(),
           bounceSound.soundEvent(), SoundSource.NEUTRAL, bounceSound.volume(),
           bounceSound.pitch(), false);
     }
@@ -148,7 +145,7 @@ public abstract class Grenade extends BounceableProjectileEntity {
     if (canPickup) {
       this.kill();
       playerEntity.addItem(new ItemStack(this.asItem(), 1));
-      this.level.playLocalSound(this.getX(), this.getY(), this.getZ(),
+      this.level().playLocalSound(this.getX(), this.getY(), this.getZ(),
           SoundEvents.ITEM_PICKUP,
           SoundSource.PLAYERS, 0.2F,
           (this.random.nextFloat() - this.random.nextFloat()) * 1.4F + 2.0F, false);
@@ -246,13 +243,8 @@ public abstract class Grenade extends BounceableProjectileEntity {
   }
 
   @Override
-  protected void defineSynchedData() {
-    this.getEntityData().define(ACTIVATED, false);
-  }
-
-  @Override
-  public Packet<?> getAddEntityPacket() {
-    return NetworkHooks.getEntitySpawningPacket(this);
+  protected void defineSynchedData(SynchedEntityData.Builder builder) {
+    builder.define(ACTIVATED, false);
   }
 
   public DamageSource createDamageSource() {

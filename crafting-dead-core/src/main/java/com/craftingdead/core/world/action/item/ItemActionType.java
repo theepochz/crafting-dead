@@ -33,10 +33,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
-import net.minecraftforge.registries.ForgeRegistryEntry;
 
 public abstract class ItemActionType<T extends ItemAction>
-    extends ForgeRegistryEntry<ActionType<?>> implements ActionType<T> {
+    implements ActionType<T> {
 
   private final boolean triggeredByClient;
   private final boolean freezeMovement;

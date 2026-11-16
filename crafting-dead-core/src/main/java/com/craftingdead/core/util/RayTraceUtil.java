@@ -38,7 +38,7 @@ public class RayTraceUtil {
 
   public static Optional<EntityHitResult> rayTraceEntities(Entity fromEntity) {
     var reachDistanceAttribute = fromEntity instanceof Player player
-        ? player.getAttribute(ForgeMod.REACH_DISTANCE.get())
+        ? player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE)
         : null;
     var distance = reachDistanceAttribute == null ? 4.0D : reachDistanceAttribute.getValue();
     var startPos = fromEntity.getEyePosition(1.0F);
@@ -69,7 +69,7 @@ public class RayTraceUtil {
     var scaledLook = look.scale(distance);
     var endPos = startPos.add(scaledLook);
 
-    var blockHitResult = rayTraceBlocks(startPos, distance, look, fromEntity.getLevel());
+    var blockHitResult = rayTraceBlocks(startPos, distance, look, fromEntity.level());
 
     var sqrDistance = blockHitResult.isPresent()
         ? blockHitResult.get().getLocation().distanceToSqr(startPos)
@@ -121,7 +121,8 @@ public class RayTraceUtil {
         break;
       }
 
-      var context = new ClipContext(currentPos, endPos, blockMode, fluidMode, null);
+      var context = new net.minecraft.world.level.ClipContext(currentPos, endPos, blockMode, fluidMode,
+          net.minecraft.world.phys.shapes.CollisionContext.empty());
       hitResult = level.clip(context);
 
       if (hitResult != null) {

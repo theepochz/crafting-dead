@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
-  "loader": "forge:separate-perspective",
+  "loader": "forge:separate_transforms",
   "base": {
     "parent": "item/generated",
     "textures": {
@@ -8,7 +8,7 @@
     }
   },
   "perspectives": {
-    "third_person_right_hand": {
+    "thirdperson_righthand": {
       "loader": "forge:composite",
       "parts": {
         "pistol_is1": {
@@ -19,7 +19,7 @@
         }
       }
     },
-    "third_person_left_hand": {
+    "thirdperson_lefthand": {
       "loader": "forge:composite",
       "parts": {
         "pistol_is1": {
@@ -30,7 +30,7 @@
         }
       }
     },
-    "first_person_right_hand": {
+    "firstperson_righthand": {
       "model": {
         "loader": "forge:composite",
         "parts": {
@@ -43,7 +43,7 @@
         }
       }
     },
-    "firs_person_left_hand": {
+    "firstperson_lefthand": {
       "loader": "forge:composite",
       "parts": {
         "pistol_is1": {

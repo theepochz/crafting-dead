@@ -21,10 +21,8 @@ package com.craftingdead.core.world.action;
 import java.util.function.Function;
 import com.craftingdead.core.world.entity.extension.LivingExtension;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.registries.ForgeRegistryEntry;
 
-public class SimpleActionType<T extends Action> extends ForgeRegistryEntry<ActionType<?>>
-    implements ActionType<T> {
+public class SimpleActionType<T extends Action> implements ActionType<T> {
 
   private final Function<LivingExtension<?, ?>, T> factory;
   private final boolean triggeredByClient;

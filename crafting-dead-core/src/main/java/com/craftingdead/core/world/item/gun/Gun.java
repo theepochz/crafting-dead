@@ -44,10 +44,12 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 
+@AutoRegisterCapability
 public interface Gun extends Equipment, CombatSlotProvider, Synched {
 
   Capability<Gun> CAPABILITY = CapabilityManager.get(new CapabilityToken<>() {});
@@ -177,7 +179,7 @@ public interface Gun extends Equipment, CombatSlotProvider, Synched {
   default Optional<ResourceLocation> getSkinName() {
     return this.getPaintStack().isEmpty()
         ? Optional.empty()
-        : Optional.of(this.getPaintStack().getItem().getRegistryName());
+        : Optional.of(this.getPaintStack().getItem().builtInRegistryHolder().key().location());
   }
 
   /**
@@ -274,8 +276,7 @@ public interface Gun extends Equipment, CombatSlotProvider, Synched {
     private static final Map<String, SecondaryActionTrigger> BY_NAME = Arrays.stream(values())
         .collect(Collectors.toMap(SecondaryActionTrigger::getSerializedName, Function.identity()));
     public static final Codec<SecondaryActionTrigger> CODEC =
-        StringRepresentable.fromEnum(SecondaryActionTrigger::values,
-            SecondaryActionTrigger::byName);
+        StringRepresentable.fromEnum(SecondaryActionTrigger::values);
 
     private final String name;
 

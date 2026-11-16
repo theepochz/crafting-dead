@@ -18,11 +18,15 @@
 
 package com.craftingdead.core.client.renderer.entity.grenade;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
+import com.mojang.math.Axis;
+
 import com.craftingdead.core.CraftingDead;
 import com.craftingdead.core.client.model.geom.ModModelLayers;
 import com.craftingdead.core.world.entity.grenade.Grenade;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Vector3f;
+import org.joml.Vector3f;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -46,21 +50,21 @@ public class C4ExplosiveRenderer extends EntityRenderer<Grenade> {
 
     if (!entity.hasStoppedMoving()) {
       float rotation = (entity.tickCount + partialTicks) * 15F;
-      poseStack.mulPose(Vector3f.XP.rotationDegrees(rotation));
-      poseStack.mulPose(Vector3f.ZP.rotationDegrees(rotation));
+      poseStack.mulPose(Axis.XP.rotationDegrees(rotation));
+      poseStack.mulPose(Axis.ZP.rotationDegrees(rotation));
     } else {
       poseStack.mulPose(entity.getHitDirection().getRotation());
     }
 
     var vertexConsumer =
         renderTypeBuffer.getBuffer(RenderType.entityCutoutNoCull(this.getTextureLocation(entity)));
-    this.model.render(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY,
-        1.0F, 1.0F, 1.0F, 0.15F);
+    this.model.render(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY);
   }
 
   @Override
   public ResourceLocation getTextureLocation(Grenade entity) {
-    return new ResourceLocation(CraftingDead.ID,
-        "textures/entity/grenade/" + entity.getType().getRegistryName().getPath() + ".png");
+    return ResourceLocation.fromNamespaceAndPath(CraftingDead.ID,
+        "textures/entity/grenade/"
+            + BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).getPath() + ".png");
   }
 }

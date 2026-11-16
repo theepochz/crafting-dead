@@ -36,7 +36,7 @@ public class AimableGunItem extends GunItem {
   }
 
   @Override
-  public ICapabilityProvider initCapabilities(ItemStack itemStack, CompoundTag nbt) {
+  public ICapabilityProvider getCapabilityProvider(ItemStack itemStack) {
     return CapabilityUtil.serializableProvider(() -> new AimableGun(itemStack, this),
         Gun.CAPABILITY, CombatSlotProvider.CAPABILITY, Scope.CAPABILITY);
   }

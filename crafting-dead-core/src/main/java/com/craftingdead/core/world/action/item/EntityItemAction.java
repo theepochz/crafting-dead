@@ -18,6 +18,8 @@
 
 package com.craftingdead.core.world.action.item;
 
+import net.minecraft.network.chat.Component;
+
 import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 import com.craftingdead.core.ServerConfig;
@@ -27,7 +29,6 @@ import com.craftingdead.core.world.action.ProgressBar;
 import com.craftingdead.core.world.effect.ModMobEffects;
 import com.craftingdead.core.world.entity.extension.LivingExtension;
 import com.craftingdead.core.world.item.ModItems;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ItemStack;
@@ -61,7 +62,7 @@ public final class EntityItemAction<T extends LivingExtension<?, ?>> extends Ite
   public ActionObserver createPerformerObserver() {
     return ActionObserver.create(this, ProgressBar.create(this.type(),
         this.performer == this.selectedTarget ? null
-            : new TranslatableComponent("action.target",
+            : Component.translatable("action.target",
                 this.selectedTarget.entity().getDisplayName().getString()),
         this::getProgress));
   }
@@ -69,7 +70,7 @@ public final class EntityItemAction<T extends LivingExtension<?, ?>> extends Ite
   @Override
   public ActionObserver createTargetObserver() {
     return ActionObserver.create(this, ProgressBar.create(this.type(),
-        new TranslatableComponent("action.performer",
+        Component.translatable("action.performer",
             this.performer.entity().getDisplayName().getString()),
         this::getProgress));
   }
@@ -94,7 +95,8 @@ public final class EntityItemAction<T extends LivingExtension<?, ?>> extends Ite
         this.type.getCustomAction().consumer().accept(this.performer, this.selectedTarget);
       }
 
-      this.selectedTarget.entity().curePotionEffects(this.getItemStack());
+      new java.util.ArrayList<>(this.selectedTarget.entity().getActiveEffects()).forEach(
+          e -> this.selectedTarget.entity().removeEffect(e.getEffect()));
 
       // Apply medical effects based on item type and config
       this.applyMedicalEffects();
@@ -102,8 +104,8 @@ public final class EntityItemAction<T extends LivingExtension<?, ?>> extends Ite
       for (var action : this.type.getEffects()) {
         if (performer.entity().getRandom().nextFloat() < action.chance()) {
           var effectInstance = action.effect().get();
-          if (effectInstance.getEffect().isInstantenous()) {
-            effectInstance.getEffect().applyInstantenousEffect(this.selectedTarget.entity(),
+          if (effectInstance.getEffect().value().isInstantenous()) {
+            effectInstance.getEffect().value().applyInstantenousEffect(this.selectedTarget.entity(),
                 this.selectedTarget.entity(),
                 this.selectedTarget.entity(), effectInstance.getAmplifier(), 1.0D);
           } else {
@@ -144,18 +146,19 @@ public final class EntityItemAction<T extends LivingExtension<?, ?>> extends Ite
       float effectiveChance = this.calculateBleedingChance(targetEntity, baseChance);
       
       if (ServerConfig.instance.bandageRemovesBleeding.get() && random.nextFloat() < effectiveChance) {
-        targetEntity.removeEffect(ModMobEffects.BLEEDING.get());
+        targetEntity.removeEffect(ModMobEffects.BLEEDING.getHolder().orElseThrow());
       }
     } else if (itemStack.is(ModItems.FIRST_AID_KIT.get())) {
       // First Aid Kit effects
       if (ServerConfig.instance.firstAidKitRemovesBleeding.get()) {
-        targetEntity.removeEffect(ModMobEffects.BLEEDING.get());
+        targetEntity.removeEffect(ModMobEffects.BLEEDING.getHolder().orElseThrow());
       }
       
       // Infection reduction (remove infection effect with chance)
       // Use ResourceLocation to check for infection effect across modules
-      var infectionEffectLocation = new net.minecraft.resources.ResourceLocation("craftingdead", "infection");
-      var infectionEffect = net.minecraftforge.registries.ForgeRegistries.MOB_EFFECTS.getValue(infectionEffectLocation);
+      var infectionEffectLocation = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("craftingdead", "infection");
+      var infectionEffect = net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT
+          .getHolder(infectionEffectLocation).orElse(null);
       if (infectionEffect != null && targetEntity.hasEffect(infectionEffect) && 
           random.nextFloat() < ServerConfig.instance.firstAidKitInfectionReductionChance.get().floatValue()) {
         targetEntity.removeEffect(infectionEffect);
@@ -169,14 +172,14 @@ public final class EntityItemAction<T extends LivingExtension<?, ?>> extends Ite
     } else if (itemStack.is(ModItems.CLEAN_RAG.get())) {
       // Clean Rag effects
       if (ServerConfig.instance.cleanRagRemovesBleeding.get()) {
-        targetEntity.removeEffect(ModMobEffects.BLEEDING.get());
+        targetEntity.removeEffect(ModMobEffects.BLEEDING.getHolder().orElseThrow());
       }
     }
   }
 
   private float calculateBleedingChance(net.minecraft.world.entity.LivingEntity entity, float baseChance) {
     // Apply adrenaline bleeding chance multiplier if adrenaline effect is active
-    if (entity.hasEffect(ModMobEffects.ADRENALINE.get())) {
+    if (entity.hasEffect(ModMobEffects.ADRENALINE.getHolder().orElseThrow())) {
       float multiplier = ServerConfig.instance.adrenalineBleedChanceMultiplier.get().floatValue();
       return Math.min(1.0f, baseChance * multiplier);
     }

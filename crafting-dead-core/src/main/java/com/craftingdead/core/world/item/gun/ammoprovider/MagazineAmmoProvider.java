@@ -21,9 +21,11 @@ package com.craftingdead.core.world.item.gun.ammoprovider;
 import com.craftingdead.core.world.action.ActionTypes;
 import com.craftingdead.core.world.entity.extension.LivingExtension;
 import com.craftingdead.core.world.item.gun.magazine.Magazine;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
 
 public class MagazineAmmoProvider implements AmmoProvider {
@@ -40,25 +42,31 @@ public class MagazineAmmoProvider implements AmmoProvider {
   }
 
   @Override
-  public CompoundTag serializeNBT() {
+  public CompoundTag serializeNBT(HolderLookup.Provider provider) {
     CompoundTag nbt = new CompoundTag();
-    nbt.put("magazineStack", this.magazineStack.serializeNBT());
+    nbt.put("magazineStack", this.magazineStack.save(provider));
     return nbt;
   }
 
   @Override
-  public void deserializeNBT(CompoundTag nbt) {
+  public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
     if (nbt.contains("magazineStack", Tag.TAG_COMPOUND)) {
-      this.magazineStack = ItemStack.of(nbt.getCompound("magazineStack"));
+      this.magazineStack = ItemStack.parseOptional(provider, nbt.getCompound("magazineStack"));
       this.stackChanged = true;
     }
+  }
+
+  private static RegistryFriendlyByteBuf buf(FriendlyByteBuf b) {
+    // Registry access is not needed for plain item stacks without components; use a dummy via
+    // the item stack stream codec by wrapping the buffer.
+    return new RegistryFriendlyByteBuf(b, net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer().registryAccess());
   }
 
   @Override
   public void encode(FriendlyByteBuf out, boolean writeAll) {
     if (this.stackChanged || writeAll) {
       out.writeBoolean(true);
-      out.writeItem(this.magazineStack);
+      ItemStack.OPTIONAL_STREAM_CODEC.encode(buf(out), this.magazineStack);
       this.stackChanged = false;
     } else {
       out.writeBoolean(false);
@@ -69,7 +77,7 @@ public class MagazineAmmoProvider implements AmmoProvider {
   @Override
   public void decode(FriendlyByteBuf in) {
     if (in.readBoolean()) {
-      this.magazineStack = in.readItem();
+      this.magazineStack = ItemStack.OPTIONAL_STREAM_CODEC.decode(buf(in));
     }
     this.getMagazine().ifPresent(magazine -> magazine.decode(in));
   }

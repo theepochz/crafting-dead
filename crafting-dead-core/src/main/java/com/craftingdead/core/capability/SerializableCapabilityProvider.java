@@ -20,6 +20,7 @@ package com.craftingdead.core.capability;
 
 import java.util.Set;
 import java.util.function.Supplier;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.Tag;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
@@ -41,12 +42,12 @@ class SerializableCapabilityProvider<C extends INBTSerializable<T>, T extends Ta
   }
 
   @Override
-  public T serializeNBT() {
-    return this.instance.map(C::serializeNBT).orElseGet(this.emptyTag);
+  public T serializeNBT(HolderLookup.Provider provider) {
+    return this.instance.map(i -> i.serializeNBT(provider)).orElseGet(this.emptyTag);
   }
 
   @Override
-  public void deserializeNBT(T tag) {
-    this.instance.ifPresent(i -> i.deserializeNBT(tag));
+  public void deserializeNBT(HolderLookup.Provider provider, T tag) {
+    this.instance.ifPresent(i -> i.deserializeNBT(provider, tag));
   }
 }

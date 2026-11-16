@@ -99,30 +99,31 @@ public class HitMarker {
           (height / 2) - pos.y - markerSizeMean, 0);
       RenderSystem.lineWidth(oneToZeroFadePct * 4.5F);
       final var tessellator = Tesselator.getInstance();
-      final var builder = tessellator.getBuilder();
       final var matrix = poseStack.last().pose();
-      builder.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL);
-      builder
-          .vertex(matrix, higherCrossEndPos, leastCrossEndPos, 0.0F)
-          .color(255, 255, 255, 255)
-          .normal(0.0F, 1.0F, 0.0F)
-          .endVertex();
-      builder
-          .vertex(matrix, leastCrossEndPos, higherCrossEndPos, 0.0F)
-          .color(255, 255, 255, 255)
-          .normal(0.0F, 1.0F, 0.0F)
-          .endVertex();
-      tessellator.end();
-      builder.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL);
-      builder
-          .vertex(matrix, leastCrossEndPos, leastCrossEndPos, 0.0F)
-          .color(255, 255, 255, 255)
-          .normal(1.0F, 0.0F, 0.0F).endVertex();
-      builder
-          .vertex(matrix, higherCrossEndPos, higherCrossEndPos, 0.0F)
-          .color(255, 255, 255, 255)
-          .normal(1.0F, 0.0F, 0.0F).endVertex();
-      tessellator.end();
+      {
+        final var builder = tessellator.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL);
+        builder
+            .addVertex(matrix, higherCrossEndPos, leastCrossEndPos, 0.0F)
+            .setColor(255, 255, 255, 255)
+            .setNormal(0.0F, 1.0F, 0.0F);
+        builder
+            .addVertex(matrix, leastCrossEndPos, higherCrossEndPos, 0.0F)
+            .setColor(255, 255, 255, 255)
+            .setNormal(0.0F, 1.0F, 0.0F);
+        com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(builder.buildOrThrow());
+      }
+      {
+        final var builder = tessellator.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL);
+        builder
+            .addVertex(matrix, leastCrossEndPos, leastCrossEndPos, 0.0F)
+            .setColor(255, 255, 255, 255)
+            .setNormal(1.0F, 0.0F, 0.0F);
+        builder
+            .addVertex(matrix, higherCrossEndPos, higherCrossEndPos, 0.0F)
+            .setColor(255, 255, 255, 255)
+            .setNormal(1.0F, 0.0F, 0.0F);
+        com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(builder.buildOrThrow());
+      }
     }
     poseStack.popPose();
     RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);

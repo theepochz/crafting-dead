@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 import com.craftingdead.core.world.entity.extension.LivingExtension;
 import com.craftingdead.core.world.entity.extension.PlayerExtension;
+import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -63,7 +64,7 @@ public interface TargetSelector<T extends LivingExtension<?, ?>> {
         .map(living -> (LivingExtension<E, ?>) living);
   }
 
-  default TargetSelector<?> hasEffect(Supplier<MobEffect> effect) {
+  default TargetSelector<?> hasEffect(Supplier<Holder<MobEffect>> effect) {
     return this.filter(living -> living.entity().hasEffect(effect.get()));
   }
 

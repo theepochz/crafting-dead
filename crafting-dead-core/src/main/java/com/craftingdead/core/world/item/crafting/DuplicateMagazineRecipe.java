@@ -20,9 +20,10 @@ package com.craftingdead.core.world.item.crafting;
 
 import com.craftingdead.core.world.item.gun.magazine.Magazine;
 import net.minecraft.core.NonNullList;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
@@ -30,13 +31,13 @@ import net.minecraftforge.common.Tags;
 
 public class DuplicateMagazineRecipe extends CustomRecipe {
 
-  public DuplicateMagazineRecipe(ResourceLocation id) {
-    super(id);
+  public DuplicateMagazineRecipe(CraftingBookCategory category) {
+    super(category);
   }
 
   @Override
-  public boolean matches(CraftingContainer inventory, Level world) {
-    for (int i = 0; i < inventory.getContainerSize(); i++) {
+  public boolean matches(CraftingInput inventory, Level world) {
+    for (int i = 0; i < inventory.size(); i++) {
       switch (i) {
         case 0:
         case 2:
@@ -62,16 +63,16 @@ public class DuplicateMagazineRecipe extends CustomRecipe {
   }
 
   @Override
-  public NonNullList<ItemStack> getRemainingItems(CraftingContainer inventory) {
+  public NonNullList<ItemStack> getRemainingItems(CraftingInput inventory) {
     NonNullList<ItemStack> remainingItems =
-        NonNullList.withSize(inventory.getContainerSize(), ItemStack.EMPTY);
+        NonNullList.withSize(inventory.size(), ItemStack.EMPTY);
 
     for (int i = 0; i < remainingItems.size(); ++i) {
       ItemStack item = inventory.getItem(i);
       if (item.getCapability(Magazine.CAPABILITY).isPresent()) {
         remainingItems.set(i, item.copy());
-      } else if (item.hasContainerItem()) {
-        remainingItems.set(i, item.getContainerItem());
+      } else if (item.hasCraftingRemainingItem()) {
+        remainingItems.set(i, item.getCraftingRemainingItem());
       }
     }
 
@@ -79,7 +80,7 @@ public class DuplicateMagazineRecipe extends CustomRecipe {
   }
 
   @Override
-  public ItemStack assemble(CraftingContainer inventory) {
+  public ItemStack assemble(CraftingInput inventory, HolderLookup.Provider registries) {
     ItemStack result = inventory.getItem(4).copy();
     // Sometimes this isn't present for some reason...
     result.getCapability(Magazine.CAPABILITY).ifPresent(magazine -> magazine.setSize(0));

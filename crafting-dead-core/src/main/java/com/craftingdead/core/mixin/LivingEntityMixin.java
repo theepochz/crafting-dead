@@ -48,21 +48,18 @@ public abstract class LivingEntityMixin {
 
   // TODO - temp until https://github.com/MinecraftForge/MinecraftForge/pull/7630 gets merged
   @Redirect(at = @At(value = "INVOKE",
-      target = "Lnet/minecraft/world/item/ItemStack;matches(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemStack;)Z"),
+      target = "Lnet/minecraft/world/entity/LivingEntity;equipmentHasChanged(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemStack;)Z"),
       method = "collectEquipmentChanges")
-  private boolean matches(ItemStack currentStack, ItemStack lastStack) {
-    if (!currentStack.equals(lastStack, true)) {
+  private boolean matches(LivingEntity livingEntity, ItemStack currentStack, ItemStack lastStack) {
+    if (!ItemStack.isSameItemSameComponents(currentStack, lastStack)) {
       return false;
     }
 
-    LivingEntity livingEntity = (LivingEntity) (Object) this;
     for (EquipmentSlot slotType : EquipmentSlot.values()) {
       if (currentStack == livingEntity.getItemBySlot(slotType)) {
         currentStack.getCapability(Gun.CAPABILITY)
             .filter(Gun::requiresSync)
-            .ifPresent(gun -> NetworkChannel.PLAY.getSimpleChannel().send(
-                PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> livingEntity),
-                new SyncGunEquipmentSlotMessage(livingEntity.getId(), slotType, gun, false)));
+            .ifPresent(gun -> NetworkChannel.PLAY.getSimpleChannel().send(new SyncGunEquipmentSlotMessage(livingEntity.getId(), slotType, gun, false), PacketDistributor.TRACKING_ENTITY_AND_SELF.with(livingEntity)));
       }
     }
     return true;

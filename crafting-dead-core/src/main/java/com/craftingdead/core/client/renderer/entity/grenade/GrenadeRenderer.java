@@ -18,10 +18,12 @@
 
 package com.craftingdead.core.client.renderer.entity.grenade;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.craftingdead.core.client.model.geom.ModModelLayers;
 import com.craftingdead.core.world.entity.grenade.Grenade;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Vector3f;
+import org.joml.Vector3f;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -54,18 +56,19 @@ public class GrenadeRenderer extends EntityRenderer<Grenade> {
     var yTranslation = Math.min(rotation / Mth.HALF_PI, 1.0F);
     yTranslation /= 10.0D;
     poseStack.translate(0.0D, yTranslation, 0.0D);
-    poseStack.mulPose(Vector3f.XP.rotation(rotation));
+    poseStack.mulPose(new org.joml.Quaternionf().rotationZ(rotation));
 
     var vertexConsumer =
         bufferSource.getBuffer(RenderType.entityCutoutNoCull(this.getTextureLocation(entity)));
-    this.model.render(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY,
-        1.0F, 1.0F, 1.0F, 0.15F);
+    this.model.render(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY);
   }
 
   @Override
   public ResourceLocation getTextureLocation(Grenade entity) {
-    return new ResourceLocation(entity.getType().getRegistryName().getNamespace(),
-        "textures/entity/grenade/" + entity.getType().getRegistryName().getPath() + ".png");
+    return ResourceLocation.fromNamespaceAndPath(
+        BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).getNamespace(),
+        "textures/entity/grenade/"
+            + BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).getPath() + ".png");
   }
 
   public static EntityRendererProvider<Grenade> cylinder() {

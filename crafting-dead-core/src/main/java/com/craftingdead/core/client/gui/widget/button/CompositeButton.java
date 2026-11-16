@@ -18,12 +18,11 @@
 
 package com.craftingdead.core.client.gui.widget.button;
 
-import java.util.function.Function;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
+
+import java.util.function.Function;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.resources.ResourceLocation;
 
 public class CompositeButton extends Button {
@@ -37,7 +36,8 @@ public class CompositeButton extends Button {
   private final int atlasYInactive;
 
   private CompositeButton(Builder builder) {
-    super(builder.x, builder.y, builder.width, builder.height, builder.text, builder.action);
+    super(Button.builder(builder.text, builder.action)
+        .bounds(builder.x, builder.y, builder.width, builder.height));
     this.textureLocation = builder.textureLocation;
     this.atlasX = builder.atlasX;
     this.atlasY = builder.atlasY;
@@ -53,23 +53,21 @@ public class CompositeButton extends Button {
   }
 
   @Override
-  public void renderButton(PoseStack matrixStack, int mouseX, int mouseY,
+  protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY,
       float partialTicks) {
-    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
-    RenderSystem.setShaderTexture(0, this.textureLocation);
-    RenderSystem.enableBlend();
-    RenderSystem.defaultBlendFunc();
-    RenderSystem.enableDepthTest();
+    final int x = this.getX();
+    final int y = this.getY();
     if (this.isActive()) {
       if (this.isHoveredOrFocused()) {
-        blit(matrixStack, this.x, this.y, this.atlasXHover, this.atlasYHover, this.width,
-            this.height);
+        guiGraphics.blit(this.textureLocation, x, y, this.atlasXHover, this.atlasYHover,
+            this.width, this.height);
       } else {
-        blit(matrixStack, this.x, this.y, this.atlasX, this.atlasY, this.width, this.height);
+        guiGraphics.blit(this.textureLocation, x, y, this.atlasX, this.atlasY, this.width,
+            this.height);
       }
     } else {
-      blit(matrixStack, this.x, this.y, this.atlasXInactive, this.atlasYInactive, this.width,
-          this.height);
+      guiGraphics.blit(this.textureLocation, x, y, this.atlasXInactive, this.atlasYInactive,
+          this.width, this.height);
     }
   }
 
@@ -88,7 +86,7 @@ public class CompositeButton extends Button {
     private int atlasXInactive;
     private int atlasYInactive;
     private Button.OnPress action = (button) -> {};
-    private Component text = TextComponent.EMPTY;
+    private Component text = Component.empty();
 
     Builder(int x, int y, int width, int height,
         ResourceLocation textureLocation, Function<Builder, CompositeButton> factory) {

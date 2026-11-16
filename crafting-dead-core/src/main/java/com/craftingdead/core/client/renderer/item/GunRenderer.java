@@ -18,13 +18,16 @@
 
 package com.craftingdead.core.client.renderer.item;
 
+import com.mojang.math.Axis;
+
+import net.minecraft.world.item.ItemDisplayContext;
+
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -47,7 +50,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.math.Transformation;
-import com.mojang.math.Vector3f;
+import org.joml.Vector3f;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -76,10 +79,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.model.ForgeModelBakery;
 import net.minecraftforge.client.model.SimpleModelState;
-import net.minecraftforge.client.model.data.EmptyModelData;
-import net.minecraftforge.common.model.TransformationHelper;
 
 public class GunRenderer implements CombatSlotItemRenderer {
 
@@ -94,7 +94,7 @@ public class GunRenderer implements CombatSlotItemRenderer {
 
   private static final int AIMING_TRANSITION_MS = 200;
 
-  private static final Random random = new Random();
+  private static final net.minecraft.util.RandomSource random = net.minecraft.util.RandomSource.create();
 
   private final Minecraft minecraft = Minecraft.getInstance();
 
@@ -124,7 +124,7 @@ public class GunRenderer implements CombatSlotItemRenderer {
       MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
     var gun = CapabilityUtil.getOrThrow(Gun.CAPABILITY, itemStack, Gun.class);
     this.renderGun(gun, false, true, itemStack.hasFoil(), 0.0F,
-        ItemTransforms.TransformType.GUI, partialTick, poseStack, bufferSource, packedLight,
+        ItemDisplayContext.GUI, partialTick, poseStack, bufferSource, packedLight,
         packedOverlay);
   }
 
@@ -136,7 +136,7 @@ public class GunRenderer implements CombatSlotItemRenderer {
   }
 
   @Override
-  public boolean handlePerspective(ItemStack item, ItemTransforms.TransformType transformType) {
+  public boolean handlePerspective(ItemStack item, ItemDisplayContext transformType) {
     return switch (transformType) {
       case THIRD_PERSON_LEFT_HAND, THIRD_PERSON_RIGHT_HAND,
           FIRST_PERSON_LEFT_HAND, FIRST_PERSON_RIGHT_HAND,
@@ -148,7 +148,7 @@ public class GunRenderer implements CombatSlotItemRenderer {
   @Override
   public void render(
       ItemStack itemStack,
-      ItemTransforms.TransformType transformType,
+      ItemDisplayContext transformType,
       @Nullable LivingExtension<?, ?> living,
       PoseStack poseStack,
       MultiBufferSource bufferSource,
@@ -161,7 +161,8 @@ public class GunRenderer implements CombatSlotItemRenderer {
       return;
     }
 
-    var partialTick = this.minecraft.isPaused() ? 1.0F : this.minecraft.getFrameTime();
+    var partialTick = this.minecraft.isPaused() ? 1.0F
+        : this.minecraft.getTimer().getGameTimeDeltaTicks();
 
     var gun = CapabilityUtil.getOrThrow(Gun.CAPABILITY, itemStack, Gun.class);
 
@@ -183,7 +184,14 @@ public class GunRenderer implements CombatSlotItemRenderer {
               packedOverlay);
           break;
         case HEAD:
-          this.properties.backTransform().push(poseStack);
+          poseStack.mulPose(this.properties.backTransform().getLeftRotation());
+      poseStack.translate(this.properties.backTransform().getTranslation().x(),
+          this.properties.backTransform().getTranslation().y(),
+          this.properties.backTransform().getTranslation().z());
+      poseStack.scale(this.properties.backTransform().getScale().x(),
+          this.properties.backTransform().getScale().y(),
+          this.properties.backTransform().getScale().z());
+      poseStack.mulPose(this.properties.backTransform().getRightRotation());
           this.renderGun(gun, true, false, itemStack.hasFoil(), 0.0F,
               transformType, partialTick, poseStack, bufferSource, packedLight,
               packedOverlay);
@@ -192,8 +200,8 @@ public class GunRenderer implements CombatSlotItemRenderer {
         case FIXED:
           poseStack.scale(1.5F, 1.5F, 1.5F);
           poseStack.translate(-0.25F, 0, 0);
-          poseStack.mulPose(Vector3f.ZP.rotationDegrees(180.0F));
-          poseStack.mulPose(Vector3f.XP.rotationDegrees(180.0F));
+          poseStack.mulPose(Axis.ZP.rotationDegrees(180.0F));
+          poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
         default:
           this.renderGun(gun, true, false, itemStack.hasFoil(), 0.0F,
               transformType, partialTick, poseStack, bufferSource, packedLight,
@@ -233,10 +241,10 @@ public class GunRenderer implements CombatSlotItemRenderer {
               ? GunRendererProperties.HandTransform.AIMING_RIGHT_HANDED
               : GunRendererProperties.HandTransform.AIMING_LEFT_HANDED,
           IDENTITY_HAND_TRANSFORMS);
-      rightHandTransforms = TransformationHelper.slerp(heldTransforms.getFirst(),
-          aimingTransforms.getFirst(), aimingPct);
-      leftHandTransforms = TransformationHelper.slerp(heldTransforms.getSecond(),
-          aimingTransforms.getSecond(), aimingPct);
+      rightHandTransforms = heldTransforms.getFirst().slerp(aimingTransforms.getFirst(),
+          aimingPct);
+      leftHandTransforms = heldTransforms.getSecond().slerp(aimingTransforms.getSecond(),
+          aimingPct);
     } else {
       rightHandTransforms = heldTransforms.getFirst();
       leftHandTransforms = heldTransforms.getSecond();
@@ -253,11 +261,14 @@ public class GunRenderer implements CombatSlotItemRenderer {
           partialTicks, poseStack);
       poseStack.translate(0.75F, -0.75F, -0.6F);
 
-      rightHandTransforms.push(poseStack);
+      poseStack.mulPose(rightHandTransforms.getLeftRotation());
+      poseStack.translate(rightHandTransforms.getTranslation().x(), rightHandTransforms.getTranslation().y(), rightHandTransforms.getTranslation().z());
+      poseStack.scale(rightHandTransforms.getScale().x(), rightHandTransforms.getScale().y(), rightHandTransforms.getScale().z());
+      poseStack.mulPose(rightHandTransforms.getRightRotation());
       {
-        poseStack.mulPose(Vector3f.YP.rotationDegrees(95.0F));
-        poseStack.mulPose(Vector3f.ZP.rotationDegrees(100.0F));
-        poseStack.mulPose(Vector3f.XP.rotationDegrees(180.0F));
+        poseStack.mulPose(Axis.YP.rotationDegrees(95.0F));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(100.0F));
+        poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
 
         poseStack.translate(0.9F, -0.75F, 0.5F);
 
@@ -278,11 +289,14 @@ public class GunRenderer implements CombatSlotItemRenderer {
 
       poseStack.translate(0.75F, -0.75F, -0.75F);
 
-      leftHandTransforms.push(poseStack);
+      poseStack.mulPose(leftHandTransforms.getLeftRotation());
+      poseStack.translate(leftHandTransforms.getTranslation().x(), leftHandTransforms.getTranslation().y(), leftHandTransforms.getTranslation().z());
+      poseStack.scale(leftHandTransforms.getScale().x(), leftHandTransforms.getScale().y(), leftHandTransforms.getScale().z());
+      poseStack.mulPose(leftHandTransforms.getRightRotation());
       {
-        poseStack.mulPose(Vector3f.YP.rotationDegrees(95.0F));
-        poseStack.mulPose(Vector3f.ZP.rotationDegrees(95.0F));
-        poseStack.mulPose(Vector3f.XP.rotationDegrees(120.0F));
+        poseStack.mulPose(Axis.YP.rotationDegrees(95.0F));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(95.0F));
+        poseStack.mulPose(Axis.XP.rotationDegrees(120.0F));
 
         poseStack.translate(0.05F, -1.05F, 0.30F);
 
@@ -331,10 +345,11 @@ public class GunRenderer implements CombatSlotItemRenderer {
           z - randomScale * z / 2);
 
       var flashBuffer = bufferSource.getBuffer(RenderType.beaconBeam(
-          new ResourceLocation(CraftingDead.ID, "textures/flash/flash" + texture + ".png"),
+          ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "textures/flash/flash" + texture + ".png"),
           true));
+      matrixStack.scale(randomScale + 0.5F, randomScale + 0.5F, randomScale + 0.5F);
       this.muzzleFlashModel.render(matrixStack, flashBuffer, RenderUtil.FULL_LIGHT,
-          packedOverlay, 1.0F, 1.0F, 1.0F, randomScale + 0.5F);
+          packedOverlay);
     }
     matrixStack.popPose();
   }
@@ -344,7 +359,7 @@ public class GunRenderer implements CombatSlotItemRenderer {
       ItemStack itemStack,
       Gun gun,
       boolean aiming,
-      ItemTransforms.TransformType transformType,
+      ItemDisplayContext transformType,
       float partialTicks,
       PoseStack poseStack,
       MultiBufferSource renderTypeBuffer,
@@ -389,9 +404,14 @@ public class GunRenderer implements CombatSlotItemRenderer {
     // ============== Animations End ==============
 
     if (sprintingPct > 0) {
-      TransformationHelper
-          .slerp(Transformation.identity(), this.properties.sprintingTransform(), sprintingPct)
-          .push(poseStack);
+      var sprinting = Transformation.identity()
+          .slerp(this.properties.sprintingTransform(), sprintingPct);
+      poseStack.mulPose(sprinting.getLeftRotation());
+      poseStack.translate(sprinting.getTranslation().x(), sprinting.getTranslation().y(),
+          sprinting.getTranslation().z());
+      poseStack.scale(sprinting.getScale().x(), sprinting.getScale().y(),
+          sprinting.getScale().z());
+      poseStack.mulPose(sprinting.getRightRotation());
     } else {
       poseStack.pushPose();
     }
@@ -417,7 +437,7 @@ public class GunRenderer implements CombatSlotItemRenderer {
       boolean renderDefaultMagazine,
       boolean foil,
       float aimingPct,
-      ItemTransforms.TransformType transformType,
+      ItemDisplayContext transformType,
       float partialTick,
       PoseStack poseStack,
       MultiBufferSource bufferSource,
@@ -426,7 +446,7 @@ public class GunRenderer implements CombatSlotItemRenderer {
 
     var skinTextureLocation = gun.getSkin() == null
         ? null
-        : gun.getSkin().getTextureLocation(gun.getItemStack().getItem().getRegistryName());
+        : gun.getSkin().getTextureLocation(gun.getItemStack().getItem().builtInRegistryHolder().key().location());
 
     final var color = gun.getPaintStack().getCapability(Paint.CAPABILITY)
         .resolve()
@@ -441,19 +461,27 @@ public class GunRenderer implements CombatSlotItemRenderer {
     var bakedModel = this.getBakedModel(this.properties.modelLocation(), textures);
 
     var tempPoseStack = new PoseStack();
-    bakedModel = bakedModel.handlePerspective(transformType, tempPoseStack);
+    // 1.21: handlePerspective removed; applyTransform returns void and mutates the stack
+    bakedModel.applyTransform(transformType, tempPoseStack, false);
     var normalTransform = new Transformation(tempPoseStack.last().pose());
 
+    var overbarrel = gun.getAttachments().get(GunCraftSlotType.OVERBARREL_ATTACHMENT);
+    ResourceLocation scopeAimKey = overbarrel == null ? null
+        : net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(overbarrel.asItem());
+    var aimTransform = gun.hasIronSight() || scopeAimKey == null
+        ? this.properties.aimTransform()
+        : this.properties.scopeAimTransform().getOrDefault(scopeAimKey,
+            this.properties.aimTransform());
     var perspectiveTransform = aimingPct > 0
-        ? TransformationHelper.slerp(normalTransform,
-            gun.hasIronSight()
-                ? this.properties.aimTransform()
-                : this.properties.scopeAimTransform().getOrDefault(gun.getAttachments()
-                    .get(GunCraftSlotType.OVERBARREL_ATTACHMENT).getRegistryName(), this.properties.aimTransform()),
-            aimingPct)
+        ? normalTransform.slerp(aimTransform, aimingPct)
         : normalTransform;
 
-    perspectiveTransform.push(poseStack);
+    poseStack.mulPose(perspectiveTransform.getLeftRotation());
+      poseStack.translate(perspectiveTransform.getTranslation().x(),
+          perspectiveTransform.getTranslation().y(), perspectiveTransform.getTranslation().z());
+      poseStack.scale(perspectiveTransform.getScale().x(), perspectiveTransform.getScale().y(),
+          perspectiveTransform.getScale().z());
+      poseStack.mulPose(perspectiveTransform.getRightRotation());
     {
       this.renderBakedModel(bakedModel, foil, color, transformType,
           poseStack, bufferSource, packedLight, packedOverlay);
@@ -475,21 +503,21 @@ public class GunRenderer implements CombatSlotItemRenderer {
   }
 
   protected final void renderBakedModel(BakedModel bakedModel, boolean foil, int colour,
-      ItemTransforms.TransformType transformType, PoseStack poseStack,
+      ItemDisplayContext transformType, PoseStack poseStack,
       MultiBufferSource renderTypeBuffer, int packedLight, int packedOverlay) {
     poseStack.pushPose();
     {
       poseStack.translate(-0.5D, -0.5D, -0.5D);
       VertexConsumer vertexBuilder = ItemRenderer.getFoilBuffer(renderTypeBuffer,
           Sheets.translucentCullBlockSheet(), true, foil);
-      var bakedQuads = bakedModel.getQuads(null, null, random, EmptyModelData.INSTANCE);
+      var bakedQuads = bakedModel.getQuads(null, null, random);
       var pose = poseStack.last();
       for (var bakedQuad : bakedQuads) {
         var red = (colour >> 16 & 255) / 255.0F;
         var green = (colour >> 8 & 255) / 255.0F;
         var blue = (colour & 255) / 255.0F;
-        vertexBuilder.putBulkData(pose, bakedQuad, red, green, blue, packedLight,
-            packedOverlay, true);
+        vertexBuilder.putBulkData(pose, bakedQuad, red, green, blue, 1.0F,
+            packedLight, packedOverlay);
       }
     }
     poseStack.popPose();
@@ -500,17 +528,14 @@ public class GunRenderer implements CombatSlotItemRenderer {
     return this.cachedModels.computeIfAbsent(
         modelLocation.hashCode() + (textures == null ? 0 : textures.hashCode()), key -> {
           if (textures != null) {
-            var model = ForgeModelBakery.instance().getModelOrMissing(modelLocation);
-            if (model instanceof BlockModel blockModel) {
-              BlockModel overriddenModel = new BlockModel(null, List.of(), textures, false,
-                  null, ItemTransforms.NO_TRANSFORMS, List.of());
-              overriddenModel.parent = blockModel;
-              return overriddenModel.bake(ForgeModelBakery.instance(), overriddenModel,
-                  ForgeModelBakery.defaultTextureGetter(), SimpleModelState.IDENTITY, modelLocation,
-                  false);
-            }
+            var bakery = this.minecraft.getModelManager().getModelBakery();
+            var model = bakery.getBakedTopLevelModels().get(toModelLocation(modelLocation));
+            // Custom textures overrides are no longer supported at bake-time in 1.21;
+            // fall back to the baked model from ModelManager.
+            return model != null ? model
+                : this.minecraft.getModelManager().getMissingModel();
           }
-          return this.minecraft.getModelManager().getModel(modelLocation);
+          return this.minecraft.getModelManager().getModel(toModelLocation(modelLocation));
         });
   }
 
@@ -519,7 +544,7 @@ public class GunRenderer implements CombatSlotItemRenderer {
       @Nullable ResourceLocation skinTextureLocation,
       int colour,
       boolean foil,
-      ItemTransforms.TransformType transformType,
+      ItemDisplayContext transformType,
       float partialTicks,
       PoseStack matrixStack,
       MultiBufferSource renderTypeBuffer,
@@ -528,7 +553,7 @@ public class GunRenderer implements CombatSlotItemRenderer {
 
     if (gun.hasIronSight()) {
       for (var ironSight : this.properties.ironSights()) {
-        ironSight.getSecond().push(matrixStack);
+        poseStack0Push(matrixStack, ironSight.getSecond());
         {
           var bakedModel = this.getBakedModel(ironSight.getFirst(),
               Map.of(GUN_TEXTURE_REFERENCE, Either.left(skinTextureLocation == null
@@ -543,11 +568,15 @@ public class GunRenderer implements CombatSlotItemRenderer {
 
     for (var attachment : gun.getAttachments().values()) {
       var transform = this.properties.attachmentTransforms()
-          .getOrDefault(attachment.getRegistryName(), Transformation.identity());
-      transform.push(matrixStack);
+          .getOrDefault(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(attachment.asItem()),
+          Transformation.identity());
+      poseStack0Push(matrixStack, transform);
       {
         var bakedModel =
-            this.getBakedModel(getAttachmentModelLocation(attachment.getRegistryName()), null);
+            this.getBakedModel(
+            getAttachmentModelLocation(
+                net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(attachment.asItem())),
+            null);
         this.renderBakedModel(bakedModel, foil, colour, transformType, matrixStack,
             renderTypeBuffer, packedLight, packedOverlay);
       }
@@ -560,16 +589,16 @@ public class GunRenderer implements CombatSlotItemRenderer {
       @Nullable ResourceLocation skinTextureLocation,
       int color,
       boolean foil,
-      ItemTransforms.TransformType transformType,
+      ItemDisplayContext transformType,
       PoseStack poseStack,
       MultiBufferSource renderTypeBuffer,
       int packedLight,
       int packedOverlay) {
     var transform = this.properties.magazineTransforms()
-        .getOrDefault(magazineStack.getItem().getRegistryName(), Transformation.identity());
-    transform.push(poseStack);
+        .getOrDefault(magazineStack.getItem().builtInRegistryHolder().key().location(), Transformation.identity());
+    poseStack0Push(poseStack, transform);
     {
-      var modelLocation = getMagazineModelLocation(magazineStack.getItem().getRegistryName());
+      var modelLocation = getMagazineModelLocation(magazineStack.getItem().builtInRegistryHolder().key().location());
 
       var magazineBakedModel = this.getBakedModel(modelLocation,
           Map.of(GUN_TEXTURE_REFERENCE, Either.left(skinTextureLocation == null
@@ -582,12 +611,26 @@ public class GunRenderer implements CombatSlotItemRenderer {
     poseStack.popPose();
   }
 
+  private static net.minecraft.client.resources.model.ModelResourceLocation toModelLocation(
+      ResourceLocation location) {
+    // 1.21: ModelResourceLocation is a record, not a ResourceLocation subclass
+    return net.minecraft.client.resources.model.ModelResourceLocation.inventory(location);
+  }
+
+  private static void poseStack0Push(PoseStack poseStack, Transformation transform) {
+    poseStack.mulPose(transform.getLeftRotation());
+    poseStack.translate(transform.getTranslation().x(), transform.getTranslation().y(),
+        transform.getTranslation().z());
+    poseStack.scale(transform.getScale().x(), transform.getScale().y(), transform.getScale().z());
+    poseStack.mulPose(transform.getRightRotation());
+  }
+
   private Material getGunRenderMaterial() {
-    var unbakedModel =
-        ForgeModelBakery.instance().getModelOrMissing(this.properties.modelLocation());
-    return unbakedModel instanceof BlockModel model
-        ? model.getMaterial(GUN_TEXTURE_REFERENCE)
-        : new Material(InventoryMenu.BLOCK_ATLAS, MissingTextureAtlasSprite.getLocation());
+    // 1.21: ForgeModelBakery removed; use the baked model's particle icon.
+    var bakedModel = this.minecraft.getModelManager()
+        .getModel(toModelLocation(this.properties.modelLocation()));
+    var particleSprite = bakedModel.getParticleIcon();
+    return new Material(InventoryMenu.BLOCK_ATLAS, particleSprite.contents().name());
   }
 
   @Override
@@ -597,11 +640,11 @@ public class GunRenderer implements CombatSlotItemRenderer {
         .map(Pair::getFirst)
         .collect(Collectors.toSet()));
     dependencies.addAll(this.item.getAcceptedAttachments().stream()
-        .map(Attachment::getRegistryName)
+        .map(a -> net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(a.asItem()))
         .map(GunRenderer::getAttachmentModelLocation)
         .collect(Collectors.toSet()));
     dependencies.addAll(this.item.getAcceptedMagazines().stream()
-        .map(Item::getRegistryName)
+        .map(it -> net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(it))
         .map(GunRenderer::getMagazineModelLocation)
         .collect(Collectors.toSet()));
     dependencies.add(this.properties.modelLocation());
@@ -625,12 +668,11 @@ public class GunRenderer implements CombatSlotItemRenderer {
   }
 
   private static ResourceLocation getAttachmentModelLocation(ResourceLocation attachmentName) {
-    return new ResourceLocation(attachmentName.getNamespace(),
-        "attachment/" + attachmentName.getPath());
+    return ResourceLocation.fromNamespaceAndPath(attachmentName.getNamespace(), "attachment/" + attachmentName.getPath());
   }
 
   private static ResourceLocation getMagazineModelLocation(ResourceLocation magazineName) {
-    return new ResourceLocation(magazineName.getNamespace(), "magazine/" + magazineName.getPath());
+    return ResourceLocation.fromNamespaceAndPath(magazineName.getNamespace(), "magazine/" + magazineName.getPath());
   }
 
   public static LayerDefinition createMuzzleFlashBodyLayer() {

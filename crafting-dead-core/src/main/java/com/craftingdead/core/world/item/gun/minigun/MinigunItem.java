@@ -35,7 +35,7 @@ public class MinigunItem extends GunItem {
   }
 
   @Override
-  public ICapabilityProvider initCapabilities(ItemStack itemStack, CompoundTag nbt) {
+  public ICapabilityProvider getCapabilityProvider(ItemStack itemStack) {
     return CapabilityUtil.serializableProvider(() -> new Minigun(itemStack, this),
         Gun.CAPABILITY, CombatSlotProvider.CAPABILITY);
   }

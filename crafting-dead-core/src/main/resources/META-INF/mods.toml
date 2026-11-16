@@ -1,6 +1,6 @@
 issueTrackerURL = "https://github.com/nexusnode/crafting-dead/issues"
 license = "GPL v3.0"
-loaderVersion = "[27,)"
+loaderVersion = "[52,)"
 modLoader = "javafml"
 
 [[mods]]
@@ -19,4 +19,4 @@ mandatory = true
 modId = "forge"
 ordering = "NONE"
 side = "BOTH"
-versionRange = "[40.1.80,)"
+versionRange = "[52.0,)"

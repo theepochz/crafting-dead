@@ -38,14 +38,15 @@ public class BleedingMobEffect extends MobEffect {
   }
 
   @Override
-  public void applyEffectTick(LivingEntity livingEntity, int amplifier) {
+  public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
     if (livingEntity.getHealth() > 1.0F) {
       livingEntity.hurt(ModDamageSource.bleeding(), 1.0F);
     }
+    return true;
   }
 
   @Override
-  public boolean isDurationEffectTick(int duration, int amplifier) {
+  public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
     int ticksBetweenHits = (MAXIMUM_DELAY - (amplifier * DELAY_REDUCTION_PER_LEVEL));
     return duration % Math.max(ticksBetweenHits, MINIMUM_DELAY) == 0;
   }
@@ -53,9 +54,9 @@ public class BleedingMobEffect extends MobEffect {
   @Override
   public List<ItemStack> getCurativeItems() {
     List<ItemStack> items = new ArrayList<>();
-    items.add(new ItemStack(ModItems.BANDAGE::get));
-    items.add(new ItemStack(ModItems.CLEAN_RAG::get));
-    items.add(new ItemStack(ModItems.FIRST_AID_KIT::get));
+    items.add(new ItemStack(ModItems.BANDAGE.get()));
+    items.add(new ItemStack(ModItems.CLEAN_RAG.get()));
+    items.add(new ItemStack(ModItems.FIRST_AID_KIT.get()));
     return items;
   }
 }

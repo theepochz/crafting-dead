@@ -43,174 +43,174 @@ import com.craftingdead.core.network.message.play.TriggerPressedMessage;
 import com.craftingdead.core.network.message.play.TraumaPacket;
 import com.craftingdead.core.network.message.play.ValidatePendingHitMessage;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.minecraftforge.network.Channel;
+import net.minecraftforge.network.ChannelBuilder;
+import net.minecraftforge.network.SimpleChannel;
 
 public enum NetworkChannel {
 
-  PLAY(new ResourceLocation(CraftingDead.ID, "play")) {
+  PLAY(ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "play")) {
     @Override
     public void registerMessages(SimpleChannel simpleChannel) {
       simpleChannel
-          .messageBuilder(SyncLivingMessage.class, 0x00, NetworkDirection.PLAY_TO_CLIENT)
+          .messageBuilder(SyncLivingMessage.class, 0x00)
           .encoder(SyncLivingMessage::encode)
           .decoder(SyncLivingMessage::decode)
-          .consumer(SyncLivingMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(OpenEquipmentMenuMessage.class, 0x01, NetworkDirection.PLAY_TO_SERVER)
+          .messageBuilder(OpenEquipmentMenuMessage.class, 0x01)
           .encoder(OpenEquipmentMenuMessage::encode)
           .decoder(OpenEquipmentMenuMessage::decode)
-          .consumer(OpenEquipmentMenuMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
           .messageBuilder(SecondaryActionMessage.class, 0x02)
           .encoder(SecondaryActionMessage::encode)
           .decoder(SecondaryActionMessage::decode)
-          .consumer(SecondaryActionMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
           .messageBuilder(SetFireModeMessage.class, 0x03)
           .encoder(SetFireModeMessage::encode)
           .decoder(SetFireModeMessage::decode)
-          .consumer(SetFireModeMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
           .messageBuilder(TriggerPressedMessage.class, 0x04)
           .encoder(TriggerPressedMessage::encode)
           .decoder(TriggerPressedMessage::decode)
-          .consumer(TriggerPressedMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
           .messageBuilder(NPCTriggerPressedMessage.class, 0x05)
           .encoder(NPCTriggerPressedMessage::encode)
           .decoder(NPCTriggerPressedMessage::decode)
-          .consumer(NPCTriggerPressedMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(SyncGunContainerSlotMessage.class, 0x06, NetworkDirection.PLAY_TO_CLIENT)
+          .messageBuilder(SyncGunContainerSlotMessage.class, 0x06)
           .encoder(SyncGunContainerSlotMessage::encode)
           .decoder(SyncGunContainerSlotMessage::decode)
-          .consumer(SyncGunContainerSlotMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(OpenStorageMessage.class, 0x07, NetworkDirection.PLAY_TO_SERVER)
+          .messageBuilder(OpenStorageMessage.class, 0x07)
           .encoder(OpenStorageMessage::encode)
           .decoder(OpenStorageMessage::decode)
-          .consumer(OpenStorageMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
           .messageBuilder(PerformActionMessage.class, 0x08)
           .encoder(PerformActionMessage::encode)
           .decoder(PerformActionMessage::decode)
-          .consumer(PerformActionMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
           .messageBuilder(CancelActionMessage.class, 0x09)
           .encoder(CancelActionMessage::encode)
           .decoder(CancelActionMessage::decode)
-          .consumer(CancelActionMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(ValidatePendingHitMessage.class, 0x0A, NetworkDirection.PLAY_TO_SERVER)
+          .messageBuilder(ValidatePendingHitMessage.class, 0x0A)
           .encoder(ValidatePendingHitMessage::encode)
           .decoder(ValidatePendingHitMessage::decode)
-          .consumer(ValidatePendingHitMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
           .messageBuilder(CrouchMessage.class, 0x0B)
           .encoder(CrouchMessage::encode)
           .decoder(CrouchMessage::decode)
-          .consumer(CrouchMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(HitMessage.class, 0x0C, NetworkDirection.PLAY_TO_CLIENT)
+          .messageBuilder(HitMessage.class, 0x0C)
           .encoder(HitMessage::encode)
           .decoder(HitMessage::decode)
-          .consumer(HitMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(SyncGunEquipmentSlotMessage.class, 0x0D, NetworkDirection.PLAY_TO_CLIENT)
+          .messageBuilder(SyncGunEquipmentSlotMessage.class, 0x0D)
           .encoder(SyncGunEquipmentSlotMessage::encode)
           .decoder(SyncGunEquipmentSlotMessage::decode)
-          .consumer(SyncGunEquipmentSlotMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(EnableCombatModeMessage.class, 0x0E, NetworkDirection.PLAY_TO_SERVER)
+          .messageBuilder(EnableCombatModeMessage.class, 0x0E)
           .encoder(EnableCombatModeMessage::encode)
           .decoder(EnableCombatModeMessage::decode)
-          .consumer(EnableCombatModeMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(DamageHandcuffsMessage.class, 0x0F, NetworkDirection.PLAY_TO_SERVER)
+          .messageBuilder(DamageHandcuffsMessage.class, 0x0F)
           .encoder(DamageHandcuffsMessage::encode)
           .decoder(DamageHandcuffsMessage::decode)
-          .consumer(DamageHandcuffsMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(ParachuteSyncMessage.class, 0x11, NetworkDirection.PLAY_TO_CLIENT)
+          .messageBuilder(ParachuteSyncMessage.class, 0x11)
           .encoder(ParachuteSyncMessage::encode)
           .decoder(ParachuteSyncMessage::decode)
-          .consumer(ParachuteSyncMessage::handle)
+          .consumer((ParachuteSyncMessage msg, net.minecraftforge.event.network.CustomPayloadEvent.Context ctx) -> ParachuteSyncMessage.handle(msg, ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(OpenCraftingMenuMessage.class, 0x12, NetworkDirection.PLAY_TO_SERVER)
+          .messageBuilder(OpenCraftingMenuMessage.class, 0x12)
           .encoder(OpenCraftingMenuMessage::encode)
           .decoder(OpenCraftingMenuMessage::decode)
-          .consumer(OpenCraftingMenuMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(TraumaPacket.class, 0x13, NetworkDirection.PLAY_TO_CLIENT)
+          .messageBuilder(TraumaPacket.class, 0x13)
           .encoder(TraumaPacket::encode)
           .decoder(TraumaPacket::decode)
-          .consumer(TraumaPacket::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(SyncProtectionConfigMessage.class, 0x14, NetworkDirection.PLAY_TO_CLIENT)
+          .messageBuilder(SyncProtectionConfigMessage.class, 0x14)
           .encoder(SyncProtectionConfigMessage::encode)
           .decoder(SyncProtectionConfigMessage::decode)
-          .consumer(SyncProtectionConfigMessage::handle)
+          .consumer((msg, ctx) -> msg.handle(ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(RightClickStateMessage.class, 0x15, NetworkDirection.PLAY_TO_SERVER)
+          .messageBuilder(RightClickStateMessage.class, 0x15)
           .encoder(RightClickStateMessage::encode)
           .decoder(RightClickStateMessage::decode)
-          .consumer(RightClickStateMessage::handle)
+          .consumer((RightClickStateMessage msg, net.minecraftforge.event.network.CustomPayloadEvent.Context ctx) -> RightClickStateMessage.handle(msg, ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(BlockDestroyParticleMessage.class, 0x16, NetworkDirection.PLAY_TO_CLIENT)
+          .messageBuilder(BlockDestroyParticleMessage.class, 0x16)
           .encoder(BlockDestroyParticleMessage::encode)
           .decoder(BlockDestroyParticleMessage::decode)
-          .consumer(BlockDestroyParticleMessage::handle)
+          .consumer((BlockDestroyParticleMessage msg, net.minecraftforge.event.network.CustomPayloadEvent.Context ctx) -> BlockDestroyParticleMessage.handle(msg, ctx))
           .add();
 
       simpleChannel
-          .messageBuilder(BlockDestroyActionMessage.class, 0x17, NetworkDirection.PLAY_TO_SERVER)
+          .messageBuilder(BlockDestroyActionMessage.class, 0x17)
           .encoder(BlockDestroyActionMessage::encode)
           .decoder(BlockDestroyActionMessage::decode)
-          .consumer(BlockDestroyActionMessage::handle)
+          .consumer((BlockDestroyActionMessage msg, net.minecraftforge.event.network.CustomPayloadEvent.Context ctx) -> BlockDestroyActionMessage.handle(msg, ctx))
           .add();
     }
   };
@@ -218,7 +218,7 @@ public enum NetworkChannel {
   /**
    * Network protocol version.
    */
-    private static final String NETWORK_VERSION = "0.0.1.2";
+    private static final int NETWORK_VERSION = 1;
   /**
    * Prevents re-registering messages.
    */
@@ -229,11 +229,11 @@ public enum NetworkChannel {
   private final SimpleChannel simpleChannel;
 
   NetworkChannel(ResourceLocation channelName) {
-    this.simpleChannel = NetworkRegistry.ChannelBuilder
+    this.simpleChannel = ChannelBuilder
         .named(channelName)
-        .clientAcceptedVersions(NETWORK_VERSION::equals)
-        .serverAcceptedVersions(NETWORK_VERSION::equals)
-        .networkProtocolVersion(() -> NETWORK_VERSION)
+        .networkProtocolVersion(NETWORK_VERSION)
+        .clientAcceptedVersions(Channel.VersionTest.exact(NETWORK_VERSION))
+        .serverAcceptedVersions(Channel.VersionTest.exact(NETWORK_VERSION))
         .simpleChannel();
   }
 
@@ -247,6 +247,7 @@ public enum NetworkChannel {
     if (!loaded) {
       for (NetworkChannel channel : NetworkChannel.values()) {
         channel.registerMessages(channel.simpleChannel);
+        channel.simpleChannel.build();
       }
       loaded = true;
     }

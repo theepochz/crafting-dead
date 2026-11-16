@@ -18,18 +18,18 @@
 
 package com.craftingdead.core.client.gui.screen.inventory;
 
+import net.minecraft.network.chat.Component;
+
 import com.craftingdead.core.CraftingDead;
 import com.craftingdead.core.client.gui.widget.button.CompositeButton;
 import com.craftingdead.core.network.NetworkChannel;
 import com.craftingdead.core.network.message.play.OpenEquipmentMenuMessage;
 import com.craftingdead.core.world.inventory.AbstractMenu;
 import com.craftingdead.core.world.inventory.GenericMenu;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 import java.util.function.Consumer;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import org.jetbrains.annotations.Nullable;
@@ -37,19 +37,18 @@ import org.jetbrains.annotations.Nullable;
 public class GenericContainerScreen extends AbstractContainerScreen<GenericMenu> {
 
   private static final ResourceLocation GENERIC_CONTAINER_TEXTURE =
-      new ResourceLocation(CraftingDead.ID, "textures/gui/container/generic_54.png");
+      ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "textures/gui/container/generic_54.png");
 
   private static final int TITLE_TEXT_COLOUR = 0x000000;
   // Implementations may change this field to another action for the return button
   @Nullable
   protected Consumer<Button> returnButtonAction = (button) -> NetworkChannel.PLAY.getSimpleChannel()
-      .sendToServer(new OpenEquipmentMenuMessage());
+      .send(new OpenEquipmentMenuMessage(), net.minecraftforge.network.PacketDistributor.SERVER.noArg());
   private CompositeButton returnButton;
 
   public GenericContainerScreen(GenericMenu menu, Inventory playerInventory,
       Component title) {
     super(menu, playerInventory, title);
-    this.passEvents = false;
     this.imageHeight = 114 + this.menu.getRows() * AbstractMenu.SLOT_SIZE;
   }
 
@@ -68,29 +67,28 @@ public class GenericContainerScreen extends AbstractContainerScreen<GenericMenu>
   }
 
   @Override
-  public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-    super.render(matrixStack, mouseX, mouseY, partialTicks);
-    this.renderTooltip(matrixStack, mouseX, mouseY);
+  public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    super.render(graphics, mouseX, mouseY, partialTicks);
+    this.renderTooltip(graphics, mouseX, mouseY);
   }
 
   @Override
-  protected void renderLabels(PoseStack poseStack, int mouseX, int mouseY) {
-    this.font.draw(poseStack, this.title, 8.0F, 6.0F, TITLE_TEXT_COLOUR);
-    this.font.draw(poseStack, this.playerInventoryTitle, 8.0F,
-        this.imageHeight - 96 + 2, TITLE_TEXT_COLOUR);
+  protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+    graphics.drawString(this.font, this.title, 8, 6, TITLE_TEXT_COLOUR, false);
+    graphics.drawString(this.font, this.playerInventoryTitle, 8,
+        this.imageHeight - 96 + 2, TITLE_TEXT_COLOUR, false);
   }
 
   @Override
-  protected void renderBg(PoseStack poseStack, float partialTicks, int mouseX, int mouseY) {
-    this.renderBackground(poseStack);
-    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-    RenderSystem.setShaderTexture(0, GENERIC_CONTAINER_TEXTURE);
+  protected void renderBg(GuiGraphics graphics, float partialTicks, int mouseX, int mouseY) {
+    // Note: don't call renderBackground() here - in 1.21+ AbstractContainerScreen
+    // delegates renderBackground to renderBg, causing infinite recursion.
     int x = (this.width - this.imageWidth) / 2;
     int y = (this.height - this.imageHeight - 8) / 2;
     int heightOffset = (6 * AbstractMenu.SLOT_SIZE + AbstractMenu.SLOT_SIZE)
         - (this.menu.getRows() * AbstractMenu.SLOT_SIZE + AbstractMenu.SLOT_SIZE);
-    this.blit(poseStack, x, y, 0, 0, this.imageWidth, 21);
-    this.blit(poseStack, x, y + 21, 0, 21 + heightOffset, this.imageWidth,
+    graphics.blit(GENERIC_CONTAINER_TEXTURE, x, y, 0, 0, this.imageWidth, 21);
+    graphics.blit(GENERIC_CONTAINER_TEXTURE, x, y + 21, 0, 21 + heightOffset, this.imageWidth,
         96 + (this.menu.getRows() * AbstractMenu.SLOT_SIZE + AbstractMenu.SLOT_SIZE));
   }
 }

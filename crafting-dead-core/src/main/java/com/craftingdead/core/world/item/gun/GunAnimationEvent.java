@@ -30,7 +30,7 @@ public enum GunAnimationEvent implements StringRepresentable {
   SHOOT("shoot"), RELOAD("reload"), INSPECT("inspect");
 
   public static final Codec<GunAnimationEvent> CODEC =
-      StringRepresentable.fromEnum(GunAnimationEvent::values, GunAnimationEvent::byName);
+      StringRepresentable.fromEnum(GunAnimationEvent::values);
   private static final Map<String, GunAnimationEvent> BY_NAME = Arrays.stream(values())
       .collect(Collectors.toMap(GunAnimationEvent::getSerializedName, Function.identity()));
 

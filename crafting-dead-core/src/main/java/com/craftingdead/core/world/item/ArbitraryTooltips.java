@@ -18,18 +18,18 @@
 
 package com.craftingdead.core.world.item;
 
+import net.minecraft.network.chat.Component;
+
 import java.util.Collection;
 import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.IRegistryDelegate;
 
 /**
  * Arbitrary tooltips that does not requires the implementation of vanilla's addInformation()
@@ -38,7 +38,7 @@ import net.minecraftforge.registries.IRegistryDelegate;
 public class ArbitraryTooltips {
 
   private static final Multimap<Supplier<? extends Item>, TooltipFunction> toRegister = ArrayListMultimap.create();
-  private static final Multimap<IRegistryDelegate<? extends Item>, TooltipFunction> functions = ArrayListMultimap.create();
+  private static final Multimap<Item, TooltipFunction> functions = ArrayListMultimap.create();
 
   public static void registerTooltip(Supplier<? extends Item> item, Component tooltip) {
     registerTooltip(item, (stack, level, flag) -> tooltip);
@@ -49,17 +49,17 @@ public class ArbitraryTooltips {
   }
 
   public static void registerTooltip(Item item, TooltipFunction function) {
-    functions.put(item.delegate, function);
+    functions.put(item, function);
   }
 
   public static void registerAll() {
     toRegister.asMap()
-        .forEach((supplier, lines) -> functions.putAll(supplier.get().delegate, lines));
+        .forEach((supplier, lines) -> functions.putAll(supplier.get().asItem(), lines));
     toRegister.clear();
   }
 
   public static Collection<TooltipFunction> getFunctions(Item item) {
-    return functions.get(item.delegate);
+    return functions.get(item);
   }
 
   @FunctionalInterface

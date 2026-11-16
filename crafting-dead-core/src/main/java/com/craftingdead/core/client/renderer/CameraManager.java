@@ -23,7 +23,7 @@ import com.craftingdead.core.util.MutableVector2f;
 import com.mojang.blaze3d.Blaze3D;
 import net.minecraft.Util;
 import net.minecraft.util.Mth;
-import com.mojang.math.Vector3f;
+import org.joml.Vector3f;
 
 public class CameraManager {
 

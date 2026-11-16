@@ -23,6 +23,7 @@ import com.craftingdead.core.world.item.equipment.ClothingProtection;
 import com.craftingdead.core.world.item.equipment.Equipment;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import org.slf4j.Logger;
@@ -44,7 +45,7 @@ import org.slf4j.LoggerFactory;
 public class ClothingProtectionHandler implements PlayerHandler {
 
   public static final LivingHandlerType<ClothingProtectionHandler> TYPE =
-      new LivingHandlerType<>(new ResourceLocation(CraftingDead.ID, "clothing_protection"));
+      new LivingHandlerType<>(ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "clothing_protection"));
 
   private static final Logger logger = LoggerFactory.getLogger(ClothingProtectionHandler.class);
 
@@ -184,14 +185,14 @@ public class ClothingProtectionHandler implements PlayerHandler {
     }
 
     // Check for projectiles
-    if (source.isProjectile() || sourceMsg.contains("arrow") 
+    if (source.is(net.minecraft.tags.DamageTypeTags.IS_PROJECTILE) || sourceMsg.contains("arrow") 
         || sourceMsg.contains("bullet")) {
       return DamageType.PROJECTILE;
     }
 
     // Environmental damage (fire, fall, drown, etc.)
-    if (source.isFire() || source.isFall() || sourceMsg.contains("fall")
-        || sourceMsg.contains("drown") || sourceMsg.contains("lava")) {
+    if (source.is(net.minecraft.tags.DamageTypeTags.IS_FIRE) || source.is(net.minecraft.tags.DamageTypeTags.IS_FALL) || sourceMsg.contains("fall")
+        || source.is(net.minecraft.tags.DamageTypeTags.IS_DROWNING) || sourceMsg.contains("drown") || sourceMsg.contains("lava")) {
       return DamageType.ENVIRONMENTAL;
     }
 

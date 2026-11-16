@@ -29,7 +29,7 @@ import com.craftingdead.core.world.item.gun.PendingHit;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.event.network.CustomPayloadEvent;
 
 public record ValidatePendingHitMessage(Map<Integer, Collection<PendingHit>> hits) {
 
@@ -64,9 +64,9 @@ public record ValidatePendingHitMessage(Map<Integer, Collection<PendingHit>> hit
     return new ValidatePendingHitMessage(hits);
   }
 
-  public boolean handle(Supplier<NetworkEvent.Context> ctx) {
-    ctx.get().enqueueWork(() -> {
-      var player = PlayerExtension.getOrThrow(ctx.get().getSender());
+  public boolean handle(CustomPayloadEvent.Context ctx) {
+    ctx.enqueueWork(() -> {
+      var player = PlayerExtension.getOrThrow(ctx.getSender());
       player.mainHandGun().ifPresent(gun -> {
         for (var hit : this.hits.entrySet()) {
           Optional.ofNullable(player.level().getEntity(hit.getKey()))

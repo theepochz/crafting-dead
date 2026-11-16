@@ -18,6 +18,8 @@
 
 package com.craftingdead.core.world.item;
 
+import net.minecraft.network.chat.Component;
+
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -48,9 +50,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
@@ -110,8 +109,18 @@ public abstract class GunItem extends ProjectileWeaponItem {
   }
 
   @Override
-  public abstract ICapabilityProvider initCapabilities(ItemStack itemStack,
-      @Nullable CompoundTag nbt);
+  public abstract ICapabilityProvider getCapabilityProvider(ItemStack itemStack);
+
+  /**
+   * 1.21: {@link ProjectileWeaponItem} declares {@code shootProjectile} abstract; actual
+   * projectile spawning happens via {@code AbstractGun} capabilities, so this is a no-op here.
+   */
+  @Override
+  protected void shootProjectile(net.minecraft.world.entity.LivingEntity shooter,
+      net.minecraft.world.entity.projectile.Projectile projectile, int index, float velocity,
+      float inaccuracy, float angle, @Nullable net.minecraft.world.entity.LivingEntity target) {
+    // no-op: handled by the Gun capability
+  }
 
   public Map<GunAnimationEvent, Function<Gun, Animation>> getAnimations() {
     return this.animations;
@@ -141,8 +150,23 @@ public abstract class GunItem extends ProjectileWeaponItem {
     return this.combatSlot;
   }
 
+  @SuppressWarnings("deprecation")
   public GunConfiguration getConfiguration(RegistryAccess registryAccess) {
-    return this.getConfiguration(registryAccess.registryOrThrow(GunConfigurations.REGISTRY_KEY));
+    // Forge custom registries (created via RegistryBuilder) live in the Forge registry
+    // system, not in vanilla's RegistryAccess; resolve through the mod's supplier.
+    return GunConfigurations.registry.get().getValue(this.configurationKey.location());
+  }
+
+  @SuppressWarnings("deprecation")
+  public GunConfiguration getConfiguration(net.minecraft.core.HolderLookup.Provider provider) {
+    // See the RegistryAccess overload: custom Forge registries are not part of vanilla
+    // holder lookups, so always resolve through the Forge registry.
+    GunConfiguration configuration = GunConfigurations.registry.get().getValue(this.configurationKey.location());
+    if (configuration == null) {
+      throw new IllegalStateException(
+          "Missing gun configuration: " + this.configurationKey.location());
+    }
+    return configuration;
   }
 
   public GunConfiguration getConfiguration(Registry<GunConfiguration> registry) {
@@ -161,62 +185,62 @@ public abstract class GunItem extends ProjectileWeaponItem {
   }
 
   @Override
-  public void appendHoverText(ItemStack itemStack, @Nullable Level level,
+  public void appendHoverText(ItemStack itemStack, Item.TooltipContext level,
       List<Component> lines, TooltipFlag tooltipFlag) {
     super.appendHoverText(itemStack, level, lines, tooltipFlag);
 
     if (level != null) {
-      var configuration = this.getConfiguration(level.registryAccess());
+      var configuration = this.getConfiguration(level.registries());
       var damageText =
-          new TextComponent(String.valueOf(configuration.getDamage()))
+          Component.literal(String.valueOf(configuration.getDamage()))
               .withStyle(ChatFormatting.RED);
-      var headshotDamageText = new TextComponent(
+      var headshotDamageText = Component.literal(
           String.valueOf((int) (configuration.getDamage()
               * ServerConfig.instance.headshotBonusDamage.get())))
           .withStyle(ChatFormatting.RED);
       var accuracyText =
-          new TextComponent((int) (configuration.getAccuracyPercent() * 100.0F) + "%")
+          Component.literal((int) (configuration.getAccuracyPercent() * 100.0F) + "%")
               .withStyle(ChatFormatting.RED);
       var rpmText =
-          new TextComponent(String.valueOf(configuration.getFireRateRPM()))
+          Component.literal(String.valueOf(configuration.getFireRateRPM()))
               .withStyle(ChatFormatting.RED);
       var rangeText =
-          new TextComponent(configuration.getRange() + " blocks")
+          Component.literal(configuration.getRange() + " blocks")
               .withStyle(ChatFormatting.RED);
       if (configuration.getRoundsPerShot() > 1) {
-        var pelletsText = new TextComponent(String.valueOf(configuration.getRoundsPerShot()))
+        var pelletsText = Component.literal(String.valueOf(configuration.getRoundsPerShot()))
             .withStyle(ChatFormatting.RED);
 
-        lines.add(new TranslatableComponent("gun.pellets_shot")
+        lines.add(Component.translatable("gun.pellets_shot")
             .withStyle(ChatFormatting.GRAY)
             .append(pelletsText));
       }
 
-      lines.add(new TranslatableComponent("gun.rpm")
+      lines.add(Component.translatable("gun.rpm")
           .withStyle(ChatFormatting.GRAY)
           .append(rpmText));
 
-      lines.add(new TranslatableComponent("gun.damage")
+      lines.add(Component.translatable("gun.damage")
           .withStyle(ChatFormatting.GRAY)
           .append(damageText));
-      lines.add(new TranslatableComponent("gun.headshot_damage")
+      lines.add(Component.translatable("gun.headshot_damage")
           .withStyle(ChatFormatting.GRAY)
           .append(headshotDamageText));
 
-      lines.add(new TranslatableComponent("gun.accuracy")
+      lines.add(Component.translatable("gun.accuracy")
           .withStyle(ChatFormatting.GRAY)
           .append(accuracyText));
-      lines.add(new TranslatableComponent("gun.range")
+      lines.add(Component.translatable("gun.range")
           .withStyle(ChatFormatting.GRAY)
           .append(rangeText));
     }
 
     itemStack.getCapability(Gun.CAPABILITY).ifPresent(gun -> {
-      var ammoCount = new TextComponent(String.valueOf(gun.getAmmoProvider().getMagazine()
+      var ammoCount = Component.literal(String.valueOf(gun.getAmmoProvider().getMagazine()
           .map(Magazine::getSize)
           .orElse(0))).withStyle(ChatFormatting.RED);
 
-      lines.add(new TranslatableComponent("gun.ammo_amount")
+      lines.add(Component.translatable("gun.ammo_amount")
           .withStyle(ChatFormatting.GRAY)
           .append(ammoCount));
 
@@ -224,7 +248,7 @@ public abstract class GunItem extends ProjectileWeaponItem {
         Component attachmentName = attachment.getDescription()
             .plainCopy()
             .withStyle(ChatFormatting.RED);
-        lines.add(new TranslatableComponent("gun.attachment")
+        lines.add(Component.translatable("gun.attachment")
             .withStyle(ChatFormatting.GRAY)
             .append(attachmentName));
       }
@@ -238,10 +262,8 @@ public abstract class GunItem extends ProjectileWeaponItem {
 
   @Override
   public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment) {
-    return enchantment == Enchantments.FLAMING_ARROWS
-        || enchantment == Enchantments.POWER_ARROWS
-        || enchantment == Enchantments.UNBREAKING
-        || super.canApplyAtEnchantingTable(stack, enchantment);
+    // 1.21: enchantment support is data-driven via "supportedItems"; fall through to that.
+    return super.canApplyAtEnchantingTable(stack, enchantment);
   }
 
   @Override
@@ -260,7 +282,7 @@ public abstract class GunItem extends ProjectileWeaponItem {
 
     private final ResourceKey<GunConfiguration> configurationKey;
 
-    private final Properties properties = new Properties().stacksTo(1).tab(ModItems.COMBAT_TAB);
+    private final Properties properties = new Properties().stacksTo(1);
 
     private final Set<FireMode> fireModes = EnumSet.noneOf(FireMode.class);
 

@@ -50,7 +50,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -86,7 +85,7 @@ public abstract class AbstractGunClient<T extends AbstractGun> implements GunCli
   }
 
   public float getPartialTick() {
-    return this.minecraft.getFrameTime();
+    return this.minecraft.getTimer().getGameTimeDeltaTicks();
   }
 
   protected abstract Optional<SoundEvent> getSecondaryActionSound();
@@ -98,8 +97,7 @@ public abstract class AbstractGunClient<T extends AbstractGun> implements GunCli
         && this.livingHitValidationBuffer.size() > 0
         && this.hitValidationTicks++ >= AbstractGun.HIT_VALIDATION_DELAY_TICKS) {
       this.hitValidationTicks = 0;
-      NetworkChannel.PLAY.getSimpleChannel().sendToServer(
-          new ValidatePendingHitMessage(new HashMap<>(this.livingHitValidationBuffer.asMap())));
+      NetworkChannel.PLAY.getSimpleChannel().send(new ValidatePendingHitMessage(new HashMap<>(this.livingHitValidationBuffer.asMap())), net.minecraftforge.network.PacketDistributor.SERVER.noArg());
       this.livingHitValidationBuffer.clear();
     }
 
@@ -201,7 +199,7 @@ public abstract class AbstractGunClient<T extends AbstractGun> implements GunCli
 
     if (!entity.isSilent() && shootSound != null) {
       // Sounds have to be played on the main thread (unfortunately)
-      this.minecraft.execute(() -> entity.level.playLocalSound(
+      this.minecraft.execute(() -> entity.level().playLocalSound(
           entity.getX(), entity.getY(), entity.getZ(), shootSound,
           entity.getSoundSource(), farAway && amplifyDistantSound ? 8.0F : 1.0F, 1.0F, true));
     }
@@ -216,8 +214,8 @@ public abstract class AbstractGunClient<T extends AbstractGun> implements GunCli
             this.livingHitValidationBuffer.put(hitEntity.getId(),
                 new PendingHit(
                     (byte) (AbstractGun.HIT_VALIDATION_DELAY_TICKS - this.hitValidationTicks),
-                    living.makeSnapshot(this.minecraft.getFrameTime()),
-                    hitLiving.makeSnapshot(this.minecraft.getFrameTime()), randomSeed,
+                    living.makeSnapshot(this.minecraft.getTimer().getGameTimeDeltaTicks()),
+                    hitLiving.makeSnapshot(this.minecraft.getTimer().getGameTimeDeltaTicks()), randomSeed,
                     this.gun.getShotCount()));
           });
     }
@@ -229,7 +227,7 @@ public abstract class AbstractGunClient<T extends AbstractGun> implements GunCli
       return;
     }
 
-    final Level level = hitEntity.level;
+    final Level level = hitEntity.level();
 
     if (headshot) {
       final int particleCount = 12;
@@ -261,21 +259,21 @@ public abstract class AbstractGunClient<T extends AbstractGun> implements GunCli
   public void handleHitBlock(LivingExtension<?, ?> living,
       BlockHitResult result, BlockState blockState, boolean playSound) {
     Entity entity = living.entity();
-    Level level = entity.level;
+    Level level = entity.level();
     Vec3 location = result.getLocation();
 
     if (playSound) {
       // Gets the hit sound to be played
       SoundEvent hitSound = ModSoundEvents.BULLET_IMPACT_DIRT.get();
-      Material blockMaterial = blockState.getMaterial();
-      if (blockMaterial == Material.WOOD) {
+      // 1.21 removed block Material; approximate by block tags / blocks
+      if (blockState.is(net.minecraft.tags.BlockTags.LOGS) || blockState.is(net.minecraft.tags.BlockTags.PLANKS)) {
         hitSound = ModSoundEvents.BULLET_IMPACT_WOOD.get();
-      } else if (blockMaterial == Material.STONE) {
+      } else if (blockState.is(net.minecraft.tags.BlockTags.STONE_BRICKS) || blockState.getSoundType() == net.minecraft.world.level.block.SoundType.STONE) {
         hitSound = ModSoundEvents.BULLET_IMPACT_STONE.get();
-      } else if (blockMaterial == Material.METAL) {
+      } else if (blockState.getSoundType() == net.minecraft.world.level.block.SoundType.METAL) {
         hitSound = Math.random() > 0.5D ? ModSoundEvents.BULLET_IMPACT_METAL.get()
             : ModSoundEvents.BULLET_IMPACT_METAL2.get();
-      } else if (blockMaterial == Material.GLASS) {
+      } else if (blockState.getSoundType() == net.minecraft.world.level.block.SoundType.GLASS) {
         hitSound = ModSoundEvents.BULLET_IMPACT_GLASS.get();
       }
 
@@ -296,7 +294,7 @@ public abstract class AbstractGunClient<T extends AbstractGun> implements GunCli
         this.secondaryActionSoundStartTimeMs = Util.getMillis();
         living.entity().playSound(sound, 1.0F, 1.0F);
       } else {
-        this.minecraft.getSoundManager().stop(sound.getRegistryName(), SoundSource.PLAYERS);
+        this.minecraft.getSoundManager().stop(sound.getLocation(), SoundSource.PLAYERS);
       }
     });
   }

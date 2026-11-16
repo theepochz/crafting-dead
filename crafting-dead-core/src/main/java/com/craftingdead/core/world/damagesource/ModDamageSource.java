@@ -20,42 +20,61 @@ package com.craftingdead.core.world.damagesource;
 
 import org.jetbrains.annotations.Nullable;
 import com.craftingdead.core.world.entity.grenade.Grenade;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.EntityDamageSource;
-import net.minecraft.world.damagesource.IndirectEntityDamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
 public class ModDamageSource {
 
-  public static final String BULLET_HEADSHOT_DAMAGE_TYPE = "bullet.headshot";
-  public static final String BULLET_BODY_DAMAGE_TYPE = "bullet";
-  public static final String BLEEDING = "bleeding";
+  public static final ResourceKey<DamageType> BULLET_HEADSHOT_DAMAGE_TYPE =
+      register("bullet_headshot");
+  public static final ResourceKey<DamageType> BULLET_BODY_DAMAGE_TYPE = register("bullet");
+  public static final ResourceKey<DamageType> BLEEDING = register("bleeding");
+  public static final ResourceKey<DamageType> GRENADE = register("grenade");
+  public static final ResourceKey<DamageType> UNSCALED_EXPLOSION_PLAYER =
+      register("unscaled_explosion_player");
+  public static final ResourceKey<DamageType> UNSCALED_EXPLOSION =
+      register("unscaled_explosion");
+
+  private static ResourceKey<DamageType> register(String name) {
+    return ResourceKey.create(Registries.DAMAGE_TYPE,
+        ResourceLocation.fromNamespaceAndPath("craftingdead", name));
+  }
+
+  private static Holder<DamageType> getHolder(Entity entity, ResourceKey<DamageType> key) {
+    return entity.level().registryAccess()
+        .registryOrThrow(Registries.DAMAGE_TYPE)
+        .getHolderOrThrow(key);
+  }
 
   public static DamageSource gun(LivingEntity source, boolean headshot) {
-    var messageId = headshot ? BULLET_HEADSHOT_DAMAGE_TYPE : BULLET_BODY_DAMAGE_TYPE;
-    return new EntityDamageSource(messageId, source)
-        .setProjectile()
-        .setExplosion();
+    var key = headshot ? BULLET_HEADSHOT_DAMAGE_TYPE : BULLET_BODY_DAMAGE_TYPE;
+    return new DamageSource(getHolder(source, key), source);
   }
 
   public static DamageSource grenade(Grenade grenade, @Nullable Entity thrower) {
-    return new IndirectEntityDamageSource("grenade", grenade, thrower).setExplosion();
+    return new DamageSource(getHolder(grenade, GRENADE), grenade, thrower);
   }
 
   public static DamageSource bleeding() {
-    return new DamageSource(BLEEDING).bypassArmor();
+    return new DamageSource(Holder.direct(new DamageType("bleeding",
+        net.minecraft.world.damagesource.DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER, 0.0F)))
+            ;
   }
 
   /**
    * Creates an explosion damage source without difficulty scaling.
    */
   public static DamageSource causeUnscaledExplosionDamage(@Nullable LivingEntity source) {
-    return (source != null
-        ? new EntityDamageSource("explosion.player", source)
-        : new DamageSource("explosion"))
-            .setExplosion();
+    var type = new DamageType("explosion",
+        net.minecraft.world.damagesource.DamageScaling.NEVER, 0.0F);
+    return new DamageSource(Holder.direct(type), source);
   }
 
   /**

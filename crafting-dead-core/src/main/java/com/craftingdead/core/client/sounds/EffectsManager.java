@@ -70,15 +70,19 @@ public class EffectsManager {
   }
 
   public void setDirectHighpassForAll() {
-    for (ChannelAccess.ChannelHandle entry : this.soundEngine.instanceToChannel.values()) {
-      entry.execute(source -> this.setDirectHighpass(source.source));
+    for (ChannelAccess.ChannelHandle entry : ((com.craftingdead.core.mixin.SoundEngineAccessor) (Object) this.soundEngine)
+        .craftingdead$getInstanceToChannel().values()) {
+      entry.execute(source -> this.setDirectHighpass(
+          ((com.craftingdead.core.mixin.ChannelAccessor) (Object) source).craftingdead$getSource()));
     }
   }
 
   public void setDirectHighpass(SoundInstance sound) {
-    ChannelAccess.ChannelHandle entry = this.soundEngine.instanceToChannel.get(sound);
+    ChannelAccess.ChannelHandle entry = ((com.craftingdead.core.mixin.SoundEngineAccessor) (Object) this.soundEngine)
+        .craftingdead$getInstanceToChannel().get(sound);
     if (entry != null) {
-      entry.execute(source -> this.setDirectHighpass(source.source));
+      entry.execute(source -> this.setDirectHighpass(
+          ((com.craftingdead.core.mixin.ChannelAccessor) (Object) source).craftingdead$getSource()));
     }
   }
 
@@ -87,8 +91,10 @@ public class EffectsManager {
   }
 
   public void removeFilterForAll() {
-    for (ChannelAccess.ChannelHandle entry : this.soundEngine.instanceToChannel.values()) {
-      entry.execute(source -> this.removeFilter(source.source));
+    for (ChannelAccess.ChannelHandle entry : ((com.craftingdead.core.mixin.SoundEngineAccessor) (Object) this.soundEngine)
+        .craftingdead$getInstanceToChannel().values()) {
+      entry.execute(source -> this.removeFilter(
+          ((com.craftingdead.core.mixin.ChannelAccessor) (Object) source).craftingdead$getSource()));
     }
   }
 

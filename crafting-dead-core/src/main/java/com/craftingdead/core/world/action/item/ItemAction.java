@@ -85,7 +85,9 @@ public abstract class ItemAction implements Action {
         && this.type().getUsageDamage() >= 1) {
       if (!heldStack.isEmpty() && heldStack.isDamageableItem()) {
         heldStack.hurtAndBreak(this.type().getUsageDamage(), this.performer().entity(),
-            (p) -> p.broadcastBreakEvent(this.hand));
+          this.hand == InteractionHand.OFF_HAND
+              ? net.minecraft.world.entity.EquipmentSlot.OFFHAND
+              : net.minecraft.world.entity.EquipmentSlot.MAINHAND);
       }
     }
 

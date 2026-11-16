@@ -21,15 +21,19 @@ package com.craftingdead.core.world.action;
 import com.craftingdead.core.world.entity.extension.LivingExtension;
 import net.minecraft.Util;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.registries.IForgeRegistryEntry;
+import net.minecraft.resources.ResourceLocation;
 
-public interface ActionType<T extends Action> extends IForgeRegistryEntry<ActionType<?>> {
+public interface ActionType<T extends Action> {
 
   void encode(T action, FriendlyByteBuf out);
 
   T decode(LivingExtension<?, ?> performer, FriendlyByteBuf in);
 
   boolean isTriggeredByClient();
+
+  default ResourceLocation getRegistryName() {
+    return ActionTypes.REGISTRY.get().getKey(this);
+  }
 
   default String makeDescriptionId() {
     return Util.makeDescriptionId("action", this.getRegistryName());

@@ -34,19 +34,17 @@ import net.minecraftforge.registries.RegistryObject;
 public class GunTriggerPredicates {
 
   public static final ResourceKey<Registry<PredicateRegistryEntry<Gun>>> REGISTRY_KEY =
-      ResourceKey.createRegistryKey(new ResourceLocation(CraftingDead.ID, "gun_trigger_predicate"));
+      ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "gun_trigger_predicate"));
 
   public static final DeferredRegister<PredicateRegistryEntry<Gun>> deferredRegister =
       DeferredRegister.create(REGISTRY_KEY, CraftingDead.ID);
 
   @SuppressWarnings("unchecked")
   public static final Supplier<IForgeRegistry<PredicateRegistryEntry<Gun>>> registry =
-      deferredRegister.makeRegistry(
-          (Class<PredicateRegistryEntry<Gun>>) (Class<?>) PredicateRegistryEntry.class,
-          RegistryBuilder::new);
+      deferredRegister.makeRegistry(RegistryBuilder::new);
 
   public static final Codec<PredicateRegistryEntry<Gun>> CODEC =
-      ExtraCodecs.lazyInitializedCodec(() -> registry.get().getCodec());
+      com.mojang.serialization.Codec.lazyInitialized(() -> registry.get().getCodec());
 
   public static final RegistryObject<PredicateRegistryEntry<Gun>> PERFORMING_SECONDARY_ACTION =
       deferredRegister.register("performing_secondary_action",

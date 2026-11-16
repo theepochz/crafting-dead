@@ -18,6 +18,12 @@
 
 package com.craftingdead.core.client.util;
 
+import com.mojang.math.Axis;
+
+import net.minecraft.world.item.ItemDisplayContext;
+
+import net.minecraft.network.chat.Component;
+
 import java.util.List;
 import java.util.Random;
 import org.jetbrains.annotations.Nullable;
@@ -26,19 +32,20 @@ import com.craftingdead.core.client.renderer.item.CombatSlotItemRenderer;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.math.Matrix4f;
-import com.mojang.math.Quaternion;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import com.mojang.math.Transformation;
-import com.mojang.math.Vector3f;
+import org.joml.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -50,6 +57,7 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
@@ -60,49 +68,76 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.client.RenderProperties;
-import net.minecraftforge.client.model.data.EmptyModelData;
+import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 
 public class RenderUtil {
 
-  public static final Codec<Quaternion> QUATERNION_CODEC = Vector3f.CODEC
-      .xmap(Quaternion::fromXYZDegrees, Quaternion::toXYZDegrees);
+  private static final Codec<Vector3f> FLOAT_VECTOR_CODEC = RecordCodecBuilder.create(
+      instance -> instance.group(
+          Codec.FLOAT.fieldOf("x").forGetter(Vector3f::x),
+          Codec.FLOAT.fieldOf("y").forGetter(Vector3f::y),
+          Codec.FLOAT.fieldOf("z").forGetter(Vector3f::z))
+          .apply(instance, Vector3f::new));
+
+  public static final Codec<Quaternionf> QUATERNION_CODEC =
+      RecordCodecBuilder.create(instance -> instance.group(
+          Codec.FLOAT.fieldOf("x").forGetter(RenderUtil::eulerX),
+          Codec.FLOAT.fieldOf("y").forGetter(RenderUtil::eulerY),
+          Codec.FLOAT.fieldOf("z").forGetter(RenderUtil::eulerZ))
+          .apply(instance, (x, y, z) -> new Quaternionf().rotationXYZ(x, y, z)));
 
   public static final Codec<Transformation> TRANSFORMATION_MATRIX_CODEC =
       RecordCodecBuilder.create(instance -> instance
           .group(
-              Vector3f.CODEC
+              FLOAT_VECTOR_CODEC
                   .optionalFieldOf("translation", new Vector3f())
                   .xmap(vec -> {
-                    var scaledVec = vec.copy();
+                    var scaledVec = new Vector3f(vec);
                     scaledVec.mul(1.0F / 16.0F);
                     return scaledVec;
                   }, scaledVec -> {
-                    var vec = scaledVec.copy();
+                    var vec = new Vector3f(scaledVec);
                     vec.mul(16.0F);
                     return vec;
                   })
                   .forGetter(Transformation::getTranslation),
-              QUATERNION_CODEC.optionalFieldOf("rotation", Quaternion.ONE.copy())
+              QUATERNION_CODEC.optionalFieldOf("rotation", new Quaternionf())
                   .forGetter(Transformation::getLeftRotation),
-              Vector3f.CODEC.optionalFieldOf("scale", new Vector3f(1.0F, 1.0F, 1.0F))
+              FLOAT_VECTOR_CODEC.optionalFieldOf("scale", new Vector3f(1.0F, 1.0F, 1.0F))
                   .forGetter(Transformation::getScale),
-              QUATERNION_CODEC.optionalFieldOf("post-rotation", Quaternion.ONE.copy())
+              QUATERNION_CODEC.optionalFieldOf("post-rotation", new Quaternionf())
                   .forGetter(Transformation::getRightRotation))
           .apply(instance, Transformation::new));
 
   public static final int FULL_LIGHT = 0xF000F0;
 
+    private static float eulerX(Quaternionf q) {
+    var v = q.getEulerAnglesXYZ(new Vector3f());
+    return v.x;
+  }
+
+  private static float eulerY(Quaternionf q) {
+    var v = q.getEulerAnglesXYZ(new Vector3f());
+    return v.y;
+  }
+
+  private static float eulerZ(Quaternionf q) {
+    var v = q.getEulerAnglesXYZ(new Vector3f());
+    return v.z;
+  }
+
   private static final Minecraft minecraft = Minecraft.getInstance();
 
   public static void updateUniform(String name, float value, PostChain postChain) {
-    for (var pass : postChain.passes) {
+    for (var pass : ((com.craftingdead.core.mixin.PostChainAccessor) (Object) postChain)
+        .craftingdead$getPasses()) {
       pass.getEffect().safeGetUniform(name).set(value);
     }
   }
 
   public static void updateUniform(String name, float[] value, PostChain postChain) {
-    for (var pass : postChain.passes) {
+    for (var pass : ((com.craftingdead.core.mixin.PostChainAccessor) (Object) postChain)
+        .craftingdead$getPasses()) {
       pass.getEffect().safeGetUniform(name).set(value);
     }
   }
@@ -111,17 +146,17 @@ public class RenderUtil {
   public static Vec2 projectToPlayerView(double x, double y, double z, float partialTicks) {
     final var activeRenderInfo = minecraft.gameRenderer.getMainCamera();
     final var cameraPos = activeRenderInfo.getPosition();
-    final var cameraRotation = activeRenderInfo.rotation().copy();
-    cameraRotation.conj();
+    final var cameraRotation = new org.joml.Quaternionf(activeRenderInfo.rotation());
+    cameraRotation.conjugate();
 
     final var result = new Vector3f(
         (float) (cameraPos.x - x),
         (float) (cameraPos.y - y),
         (float) (cameraPos.z - z));
 
-    result.transform(cameraRotation);
+    cameraRotation.transform(result);
 
-    if (minecraft.options.bobView) {
+    if (minecraft.options.bobView().get()) {
       final var renderViewEntity = minecraft.getCameraEntity();
       if (renderViewEntity instanceof Player player) {
         final var distanceWalkedModified = player.walkDist;
@@ -129,27 +164,27 @@ public class RenderUtil {
         final var changeInDistance = distanceWalkedModified - player.walkDistO;
         final var lerpDistance = -(distanceWalkedModified + changeInDistance * partialTicks);
         final var lerpYaw = Mth.lerp(partialTicks, player.oBob, player.bob);
-        final var q2 = new Quaternion(Vector3f.XP,
-            Math.abs(Mth.cos(lerpDistance * (float) Math.PI - 0.2F) * lerpYaw) * 5.0F, true);
-        q2.conj();
-        result.transform(q2);
+        final var q2 = new Quaternionf().rotationXYZ(
+            Math.abs(Mth.cos(lerpDistance * (float) Math.PI - 0.2F) * lerpYaw) * 5.0F, 0.0F, 0.0F);
+        q2.conjugate();
+        q2.transform(result);
 
-        final var q1 = new Quaternion(Vector3f.ZP,
-            Mth.sin(lerpDistance * (float) Math.PI) * lerpYaw * 3.0F,
-            true);
-        q1.conj();
-        result.transform(q1);
+        final var q1 = new Quaternionf().rotationXYZ(0.0F, 0.0F,
+            Mth.sin(lerpDistance * (float) Math.PI) * lerpYaw * 3.0F);
+        q1.conjugate();
+        q1.transform(result);
 
         var bobTranslation = new Vector3f(
             Mth.sin(lerpDistance * (float) Math.PI) * lerpYaw * 0.5F,
             -Math.abs(Mth.cos(lerpDistance * (float) Math.PI) * lerpYaw),
             0.0F);
-        bobTranslation.setY(-bobTranslation.y()); // this is weird but hey, if it works
+        bobTranslation.y = -bobTranslation.y; // this is weird but hey, if it works
         result.add(bobTranslation);
       }
     }
 
-    final var fov = minecraft.gameRenderer.getFov(activeRenderInfo, partialTicks, true);
+    final var fov = ((com.craftingdead.core.mixin.GameRendererAccessor) (Object) minecraft.gameRenderer)
+        .craftingdead$invokeGetFov(activeRenderInfo, partialTicks, true);
     final var halfHeight = minecraft.getWindow().getGuiScaledHeight() / 2.0F;
     final var scale = halfHeight / (result.z() * (float) Math.tan(Math.toRadians(fov / 2.0D)));
     return result.z() > 0.0D
@@ -210,14 +245,15 @@ public class RenderUtil {
     final var poseStack = new PoseStack();
     // As of writing this, Camera does not contain a roll
     // cameraRotationStack.multiply(Vector3f.POSITIVE_Z.getDegreesQuaternion(rollHere));
-    poseStack.mulPose(Vector3f.XP.rotationDegrees(pitch));
-    poseStack.mulPose(Vector3f.YP.rotationDegrees(yaw + 180.0F));
+    poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
+    poseStack.mulPose(Axis.YP.rotationDegrees(yaw + 180.0F));
 
     final var projectionMatrix = new Matrix4f();
-    projectionMatrix.setIdentity();
+    
 
-    projectionMatrix.multiply(
-        gameRenderer.getProjectionMatrix(gameRenderer.getFov(camera, partialTicks, true)));
+    projectionMatrix.set(gameRenderer.getProjectionMatrix(
+        ((com.craftingdead.core.mixin.GameRendererAccessor) (Object) gameRenderer)
+            .craftingdead$invokeGetFov(camera, partialTicks, true)));
 
     final var frustum = new Frustum(poseStack.last().pose(), projectionMatrix);
     frustum.prepare(viewerX, viewerY, viewerZ);
@@ -226,16 +262,15 @@ public class RenderUtil {
   }
 
   public static void fill(PoseStack poseStack, int x, int y, int width, int height, int colour) {
-    GuiComponent.fill(poseStack, x, y, x + width, y + height, colour);
+    new GuiGraphics(Minecraft.getInstance(), Minecraft.getInstance().renderBuffers().bufferSource())
+        .fill(x, y, x + width, y + height, colour);
   }
 
   public static void fillGradient(PoseStack poseStack, float x, float y, float x2, float y2,
       int startColor, int endColor) {
-    RenderSystem.disableTexture();
     RenderSystem.enableBlend();
     RenderSystem.defaultBlendFunc();
-    RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
+    
     var startAlpha = (startColor >> 24 & 255) / 255.0F;
     var startRed = (startColor >> 16 & 255) / 255.0F;
     var startGreen = (startColor >> 8 & 255) / 255.0F;
@@ -249,28 +284,22 @@ public class RenderUtil {
     var pose = poseStack.last().pose();
 
     var tessellator = Tesselator.getInstance();
-    var builder = tessellator.getBuilder();
-    builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+    var builder = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
     builder
-        .vertex(pose, x, y2, 0.0F)
-        .color(startRed, startGreen, startBlue, startAlpha)
-        .endVertex();
+        .addVertex(pose, x, y2, 0.0F)
+        .setColor(startRed, startGreen, startBlue, startAlpha);
     builder
-        .vertex(pose, x2, y2, 0.0F)
-        .color(endRed, endGreen, endBlue, endAlpha)
-        .endVertex();
+        .addVertex(pose, x2, y2, 0.0F)
+        .setColor(endRed, endGreen, endBlue, endAlpha);
     builder
-        .vertex(pose, x2, y, 0.0F)
-        .color(endRed, endGreen, endBlue, endAlpha)
-        .endVertex();
+        .addVertex(pose, x2, y, 0.0F)
+        .setColor(endRed, endGreen, endBlue, endAlpha);
     builder
-        .vertex(pose, x, y, 0.0F)
-        .color(startRed, startGreen, startBlue, startAlpha)
-        .endVertex();
-    tessellator.end();
+        .addVertex(pose, x, y, 0.0F)
+        .setColor(startRed, startGreen, startBlue, startAlpha);
+    BufferUploader.drawWithShader(builder.buildOrThrow());
 
     RenderSystem.disableBlend();
-    RenderSystem.enableTexture();
   }
 
   /**
@@ -278,7 +307,7 @@ public class RenderUtil {
    */
   public static void applyPlayerCrouchRotation(PoseStack matrix) {
     // Fix X rotation
-    matrix.mulPose(Vector3f.XP.rotation(0.5F));
+    matrix.mulPose(new Quaternionf().rotationX(0.5F));
 
     // Fix XYZ position
     matrix.translate(0F, 0.2F, -0.1F);
@@ -305,15 +334,13 @@ public class RenderUtil {
 
   public static void blit(float x, float y, float x2, float y2, float u,
       float v, float u2, float v2) {
-    RenderSystem.setShader(GameRenderer::getPositionTexShader);
     final var tessellator = Tesselator.getInstance();
-    final var builder = tessellator.getBuilder();
-    builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-    builder.vertex(x, y2, 0.0D).uv(u, v).endVertex();
-    builder.vertex(x2, y2, 0.0D).uv(u2, v).endVertex();
-    builder.vertex(x2, y, 0.0D).uv(u2, v2).endVertex();
-    builder.vertex(x, y, 0.0D).uv(u, v2).endVertex();
-    tessellator.end();
+    final var builder = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+    builder.addVertex(x, y2, 0.0F).setUv(u, v);
+    builder.addVertex(x2, y2, 0.0F).setUv(u2, v);
+    builder.addVertex(x2, y, 0.0F).setUv(u2, v2);
+    builder.addVertex(x, y, 0.0F).setUv(u, v2);
+    BufferUploader.drawWithShader(builder.buildOrThrow());
   }
 
   public static float getFitScale(final float imageWidth, final float imageHeight) {
@@ -347,7 +374,7 @@ public class RenderUtil {
       } else {
         poseStack.translate(-8, -4, 0);
         RenderUtil.renderGuiItem(poseStack, itemStack, 1.0F,
-            ItemTransforms.TransformType.GUI);
+            ItemDisplayContext.GUI);
       }
     }
     poseStack.popPose();
@@ -356,11 +383,11 @@ public class RenderUtil {
   public static void renderGuiItem(PoseStack poseStack, ItemStack itemStack, float alpha) {
     renderGuiItem(poseStack, itemStack, alpha,
         minecraft.getItemRenderer().getModel(itemStack, null, null, 0),
-        ItemTransforms.TransformType.GUI);
+        ItemDisplayContext.GUI);
   }
 
   public static void renderGuiItem(PoseStack poseStack, ItemStack itemStack,
-      float alpha, ItemTransforms.TransformType transformType) {
+      float alpha, ItemDisplayContext transformType) {
     renderGuiItem(poseStack, itemStack, alpha,
         minecraft.getItemRenderer().getModel(itemStack, null, null, 0), transformType);
   }
@@ -374,7 +401,7 @@ public class RenderUtil {
         GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
     RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
-    poseStack.translate(0, 0, 100.0F + minecraft.getItemRenderer().blitOffset);
+    poseStack.translate(0, 0, 100.0F);
     poseStack.scale(1.0F, -1.0F, 1.0F);
     poseStack.scale(16.0F, 16.0F, 16.0F);
   }
@@ -383,7 +410,7 @@ public class RenderUtil {
    * Copied from {@link ItemRenderer#renderGuiItem} with the ability to customise the color.
    */
   public static void renderGuiItem(PoseStack poseStack, ItemStack itemStack,
-      float alpha, BakedModel bakedmodel, ItemTransforms.TransformType transformType) {
+      float alpha, BakedModel bakedmodel, ItemDisplayContext transformType) {
     poseStack.pushPose();
     {
       poseStack.translate(8.0D, 8.0D, 0.0D);
@@ -414,10 +441,10 @@ public class RenderUtil {
 
   /**
    * Copied from
-   * {@link ItemRenderer#render(ItemStack, net.minecraft.client.renderer.block.model.ItemTransforms.TransformType, boolean, PoseStack, MultiBufferSource, int, int, BakedModel)
+   * {@link ItemRenderer#render(ItemStack, net.minecraft.client.renderer.block.model.ItemDisplayContext, boolean, PoseStack, MultiBufferSource, int, int, BakedModel)
    * with the ability to customise the alpha.
    */
-  public static void render(ItemStack itemStack, ItemTransforms.TransformType transformType,
+  public static void render(ItemStack itemStack, ItemDisplayContext transformType,
       boolean leftHanded, PoseStack poseStack, MultiBufferSource bufferSource, float alpha,
       int packedLight, int packedOverlay, BakedModel bakedModel) {
     if (itemStack.isEmpty()) {
@@ -426,31 +453,30 @@ public class RenderUtil {
 
     if (itemStack.is(Items.TRIDENT)) {
       bakedModel = minecraft.getItemRenderer().getItemModelShaper().getModelManager()
-          .getModel(new ModelResourceLocation("minecraft:trident#inventory"));
+          .getModel(ModelResourceLocation.inventory(
+              ResourceLocation.withDefaultNamespace("trident")));
     } else if (itemStack.is(Items.SPYGLASS)) {
       bakedModel = minecraft.getItemRenderer().getItemModelShaper().getModelManager()
-          .getModel(new ModelResourceLocation("minecraft:spyglass#inventory"));
+          .getModel(ModelResourceLocation.inventory(
+              ResourceLocation.withDefaultNamespace("spyglass")));
     }
 
     poseStack.pushPose();
     {
-      bakedModel =
-          ForgeHooksClient.handleCameraTransforms(poseStack, bakedModel, transformType, leftHanded);
+      // 1.21: transforms are applied via BakedModel extension method
+      bakedModel.applyTransform(transformType, poseStack, leftHanded);
       poseStack.translate(-0.5D, -0.5D, -0.5D);
       if (!bakedModel.isCustomRenderer()) {
-        if (bakedModel.isLayered()) {
-          ForgeHooksClient.drawItemLayered(minecraft.getItemRenderer(), bakedModel, itemStack,
-              poseStack, bufferSource, packedLight, packedOverlay, true);
-        } else {
+        {
           var renderType = ItemBlockRenderTypes.getRenderType(itemStack, true);
           VertexConsumer vertexConsumer;
           if (itemStack.is(Items.COMPASS) && itemStack.hasFoil()) {
             poseStack.pushPose();
             {
               var pose = poseStack.last();
-              pose.pose().multiply(0.5F);
+              pose.pose().scale(0.5F);
               vertexConsumer =
-                  ItemRenderer.getCompassFoilBufferDirect(bufferSource, renderType, pose);
+                  net.minecraft.client.renderer.entity.ItemRenderer.getCompassFoilBuffer(bufferSource, renderType, pose);
             }
             poseStack.popPose();
           } else {
@@ -463,7 +489,7 @@ public class RenderUtil {
               vertexConsumer, packedLight, packedOverlay, alpha);
         }
       } else {
-        RenderProperties.get(itemStack).getItemStackRenderer().renderByItem(
+        IClientItemExtensions.of(itemStack.getItem()).getCustomRenderer().renderByItem(
             itemStack, transformType, poseStack, bufferSource, packedLight, packedOverlay);
       }
     }
@@ -473,16 +499,16 @@ public class RenderUtil {
   public static void renderModelLists(BakedModel bakedModel, ItemStack itemStack,
       PoseStack poseStack, VertexConsumer vertexConsumer,
       int packedLight, int packedOverlay, float alpha) {
-    var random = new Random();
+    var random = net.minecraft.util.RandomSource.create();
     var seed = 42L;
     for (var direction : Direction.values()) {
       random.setSeed(seed);
-      renderQuadList(bakedModel.getQuads(null, direction, random, EmptyModelData.INSTANCE),
+      renderQuadList(bakedModel.getQuads(null, direction, random),
           itemStack, poseStack, vertexConsumer, packedLight, packedOverlay, alpha);
     }
 
     random.setSeed(seed);
-    renderQuadList(bakedModel.getQuads(null, null, random, EmptyModelData.INSTANCE),
+    renderQuadList(bakedModel.getQuads(null, null, random),
         itemStack, poseStack, vertexConsumer, packedLight, packedOverlay, alpha);
   }
 

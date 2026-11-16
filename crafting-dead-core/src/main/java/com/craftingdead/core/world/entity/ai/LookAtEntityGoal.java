@@ -48,7 +48,7 @@ public class LookAtEntityGoal<T extends Entity> extends Goal {
 
   @Override
   public boolean canUse() {
-    if (this.goalOwner.hasEffect(ModMobEffects.FLASH_BLINDNESS.get())) {
+    if (this.goalOwner.hasEffect(ModMobEffects.FLASH_BLINDNESS.getHolder().orElseThrow())) {
       return false;
     }
 
@@ -57,7 +57,7 @@ public class LookAtEntityGoal<T extends Entity> extends Goal {
     }
 
     var possibleEntities =
-        this.goalOwner.level.getEntitiesOfClass(this.watchedClass, this.goalOwner
+        this.goalOwner.level().getEntitiesOfClass(this.watchedClass, this.goalOwner
             .getBoundingBox().inflate((double) this.maxDistance, 4.0D, (double) this.maxDistance));
 
     double lastSqDistance = Double.MAX_VALUE;
@@ -79,7 +79,7 @@ public class LookAtEntityGoal<T extends Entity> extends Goal {
       return false;
     }
 
-    if (this.goalOwner.hasEffect(ModMobEffects.FLASH_BLINDNESS.get())) {
+    if (this.goalOwner.hasEffect(ModMobEffects.FLASH_BLINDNESS.getHolder().orElseThrow())) {
       return false;
     }
 

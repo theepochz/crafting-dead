@@ -18,15 +18,14 @@
 
 package com.craftingdead.core.world.item;
 
+import net.minecraft.network.chat.Component;
+
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 import com.craftingdead.core.world.item.gun.attachment.Attachment;
 import com.craftingdead.core.world.item.gun.attachment.AttachmentLike;
 import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -47,15 +46,15 @@ public class AttachmentItem extends Item implements AttachmentLike {
   }
 
   @Override
-  public void appendHoverText(ItemStack stack, Level world,
+  public void appendHoverText(ItemStack stack, Item.TooltipContext world,
       List<Component> lines, TooltipFlag tooltipFlag) {
     super.appendHoverText(stack, world, lines, tooltipFlag);
 
     for (Entry<Attachment.MultiplierType, Float> entry : this.asAttachment()
         .getMultipliers().entrySet()) {
-      lines.add(new TranslatableComponent(entry.getKey().getTranslationKey())
+      lines.add(Component.translatable(entry.getKey().getTranslationKey())
           .withStyle(ChatFormatting.GRAY)
-          .append(new TextComponent(" " + entry.getValue() + "x")
+          .append(Component.literal(" " + entry.getValue() + "x")
               .withStyle(ChatFormatting.RED)));
     }
   }

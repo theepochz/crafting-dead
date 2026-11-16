@@ -33,16 +33,13 @@ import java.util.function.Supplier;
 public class GunConfigurations {
 
   public static final ResourceKey<Registry<GunConfiguration>> REGISTRY_KEY =
-      ResourceKey.createRegistryKey(new ResourceLocation(CraftingDead.ID, "gun_configuration"));
+      ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "gun_configuration"));
 
   public static final DeferredRegister<GunConfiguration> deferredRegister =
       DeferredRegister.create(REGISTRY_KEY, CraftingDead.ID);
 
   public static final Supplier<IForgeRegistry<GunConfiguration>> registry =
-      deferredRegister.makeRegistry(GunConfiguration.class,
-          () -> new RegistryBuilder<GunConfiguration>()
-              .disableSaving()
-              .dataPackRegistry(GunConfiguration.DIRECT_CODEC, GunConfiguration.DIRECT_CODEC));
+      deferredRegister.makeRegistry(() -> new RegistryBuilder<GunConfiguration>().disableSaving());
 
   // ================================================================================
   // Assault Rifles

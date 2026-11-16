@@ -18,12 +18,12 @@
 
 package com.craftingdead.core.world.item;
 
+import net.minecraft.network.chat.Component;
+
 import java.util.List;
 import com.craftingdead.core.ServerConfig;
 import com.craftingdead.core.world.entity.grenade.Grenade;
 import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -50,7 +50,7 @@ public class RemoteDetonatorItem extends Item {
     player.startUsingItem(hand);
 
     if (level instanceof ServerLevel serverLevel) {
-      serverLevel.playSound(null, player, SoundEvents.UI_BUTTON_CLICK,
+      serverLevel.playSound(null, player, SoundEvents.UI_BUTTON_CLICK.value(),
           SoundSource.PLAYERS, 0.8F, 1.2F);
 
       serverLevel.getEntities(player,
@@ -70,10 +70,10 @@ public class RemoteDetonatorItem extends Item {
   }
 
   @Override
-  public void appendHoverText(ItemStack stack, Level level,
+  public void appendHoverText(ItemStack stack, Item.TooltipContext level,
       List<Component> lines, TooltipFlag tooltipFlag) {
     super.appendHoverText(stack, level, lines, tooltipFlag);
-    lines.add(new TranslatableComponent("remote_detonator.information", ServerConfig.instance.explosivesRemoteDetonatorRange.get())
+    lines.add(Component.translatable("remote_detonator.information", ServerConfig.instance.explosivesRemoteDetonatorRange.get())
         .withStyle(ChatFormatting.GRAY));
   }
 }

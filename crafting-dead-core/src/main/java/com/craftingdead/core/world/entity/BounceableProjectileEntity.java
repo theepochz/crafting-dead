@@ -37,6 +37,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraftforge.entity.IEntityAdditionalSpawnData;
 
 public abstract class BounceableProjectileEntity extends Entity
@@ -85,7 +86,7 @@ public abstract class BounceableProjectileEntity extends Entity
     super.tick();
 
     BlockPos currentBlockPos = this.blockPosition();
-    BlockState currentBlockState = this.level.getBlockState(currentBlockPos);
+    BlockState currentBlockState = this.level().getBlockState(currentBlockPos);
 
     if (this.stoppedMoving) {
       // Places the current inBlockState if it is not present
@@ -94,7 +95,7 @@ public abstract class BounceableProjectileEntity extends Entity
       }
 
       boolean notCollided = (this.blockStanding != currentBlockState
-          && this.level.noCollision((new AABB(this.position(), this.position())).inflate(0.06D)));
+          && this.level().noCollision((new AABB(this.position(), this.position())).inflate(0.06D)));
       boolean shouldMove = !this.getDeltaMovement().equals(Vec3.ZERO) || notCollided;
 
       if (shouldMove) {
@@ -117,13 +118,13 @@ public abstract class BounceableProjectileEntity extends Entity
       Vec3 motionBeforeHit = this.getDeltaMovement();
 
       BlockHitResult blockRayTraceResult =
-          this.level.clip(new ClipContext(position, position.add(motionBeforeHit),
+          this.level().clip(new ClipContext(position, position.add(motionBeforeHit),
               ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
 
       Vec3 nextBounceMotion = null;
 
       if (blockRayTraceResult.getType() != HitResult.Type.MISS) {
-        BlockState blockHitState = this.level.getBlockState(blockRayTraceResult.getBlockPos());
+        BlockState blockHitState = this.level().getBlockState(blockRayTraceResult.getBlockPos());
 
         Vec3 difference =
             blockRayTraceResult.getLocation().subtract(this.getX(), this.getY(),
@@ -217,7 +218,7 @@ public abstract class BounceableProjectileEntity extends Entity
     this.shoot((double) f, (double) f1, (double) f2, force, p_184538_6_);
     Vec3 vec3d = entity.getDeltaMovement();
     this.setDeltaMovement(
-        this.getDeltaMovement().add(vec3d.x, entity.isOnGround() ? 0.0D : vec3d.y, vec3d.z));
+        this.getDeltaMovement().add(vec3d.x, entity.onGround() ? 0.0D : vec3d.y, vec3d.z));
   }
 
   public void shoot(double x, double y, double z, float force, float p_70186_8_) {
@@ -297,6 +298,9 @@ public abstract class BounceableProjectileEntity extends Entity
   }
 
   @Override
+  protected void defineSynchedData(SynchedEntityData.Builder builder) {}
+
+  @Override
   public void writeSpawnData(FriendlyByteBuf buffer) {
     buffer.writeBoolean(this.stoppedMoving);
     buffer.writeInt(this.totalTicksInAir);
@@ -315,7 +319,7 @@ public abstract class BounceableProjectileEntity extends Entity
   }
 
   public Optional<Entity> getSource() {
-    return this.level instanceof ServerLevel level
+    return this.level() instanceof ServerLevel level
         ? Optional.ofNullable(level.getEntity(this.sourceId))
         : Optional.empty();
   }

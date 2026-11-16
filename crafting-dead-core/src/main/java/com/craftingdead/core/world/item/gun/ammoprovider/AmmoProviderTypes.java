@@ -31,13 +31,13 @@ import net.minecraftforge.registries.RegistryObject;
 public class AmmoProviderTypes {
 
   public static final ResourceKey<Registry<AmmoProviderType>> REGISTRY_KEY =
-      ResourceKey.createRegistryKey(new ResourceLocation(CraftingDead.ID, "ammo_provider_type"));
+      ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(CraftingDead.ID, "ammo_provider_type"));
 
   public static final DeferredRegister<AmmoProviderType> deferredRegister =
       DeferredRegister.create(REGISTRY_KEY, CraftingDead.ID);
 
   public static final Supplier<IForgeRegistry<AmmoProviderType>> registry =
-      deferredRegister.makeRegistry(AmmoProviderType.class, RegistryBuilder::new);
+      deferredRegister.makeRegistry(RegistryBuilder::new);
 
   public static final RegistryObject<AmmoProviderType> MAGAZINE =
       deferredRegister.register("magazine",

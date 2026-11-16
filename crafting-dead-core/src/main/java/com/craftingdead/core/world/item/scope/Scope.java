@@ -21,10 +21,12 @@ package com.craftingdead.core.world.item.scope;
 import java.util.Optional;
 import com.craftingdead.core.world.entity.extension.LivingExtension;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 
+@AutoRegisterCapability
 public interface Scope {
 
   Capability<Scope> CAPABILITY = CapabilityManager.get(new CapabilityToken<>() {});

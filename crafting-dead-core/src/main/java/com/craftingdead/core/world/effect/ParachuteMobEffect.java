@@ -23,40 +23,42 @@ import com.craftingdead.core.network.message.play.ParachuteSyncMessage;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraftforge.common.ForgeMod;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.network.PacketDistributor;
 
 public class ParachuteMobEffect extends MobEffect {
 
   public ParachuteMobEffect() {
     super(MobEffectCategory.BENEFICIAL, 0xFFEFD1);
-    this.addAttributeModifier(ForgeMod.ENTITY_GRAVITY.get(), "c5a9e5c2-bd74-11eb-8529-0242ac130003",
-        -0.07, AttributeModifier.Operation.ADDITION);
+    this.addAttributeModifier(Attributes.GRAVITY,
+        ResourceLocation.fromNamespaceAndPath("minecraft", "parachute_gravity"),
+        -0.07, AttributeModifier.Operation.ADD_VALUE);
   }
 
   @Override
-  public void applyEffectTick(LivingEntity livingEntity, int amplifier) {
+  public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
     livingEntity.resetFallDistance();
-    if (livingEntity.isOnGround() || livingEntity.isInWater()) {
-      livingEntity.removeEffect(ModMobEffects.PARACHUTE.get());
+    if (livingEntity.onGround() || livingEntity.isInWater()) {
+      livingEntity.removeEffect(ModMobEffects.PARACHUTE.getHolder().orElseThrow());
       this.syncParachuteEffect(livingEntity, false);
-      return;
+      return true;
     }
     this.syncParachuteEffect(livingEntity, true);
-    super.applyEffectTick(livingEntity, amplifier);
+    return super.applyEffectTick(livingEntity, amplifier);
   }
 
   @Override
-  public boolean isDurationEffectTick(int duration, int amplifier) {
+  public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
     return true;
   }
 
   private void syncParachuteEffect(LivingEntity entity, boolean hasParachute) {
-    if (!entity.level.isClientSide()) {
+    if (!entity.level().isClientSide()) {
       NetworkChannel.PLAY.getSimpleChannel()
-          .send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity),
-              new ParachuteSyncMessage(entity.getId(), hasParachute));
+          .send(new ParachuteSyncMessage(entity.getId(), hasParachute), PacketDistributor.TRACKING_ENTITY_AND_SELF.with(entity));
     }
   }
 }

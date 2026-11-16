@@ -28,7 +28,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Material;
 
 public class ToolItem extends Item {
 
@@ -46,21 +45,14 @@ public class ToolItem extends Item {
   public float getDestroySpeed(ItemStack itemStack, BlockState blockState) {
     if (blockState.is(Blocks.COBWEB)) {
       return 15.0F;
-    } else {
-      Material material = blockState.getMaterial();
-      return material != Material.PLANT
-          && material != Material.REPLACEABLE_PLANT
-          && material != Material.WATER_PLANT
-          && !blockState.is(BlockTags.LEAVES)
-          && material != Material.VEGETABLE ? 1.0F : 1.5F;
     }
+    return 1.0F;
   }
 
   @Override
   public boolean hurtEnemy(ItemStack itemStack, LivingEntity targetEntity,
       LivingEntity attackerEntity) {
-    itemStack.hurtAndBreak(1, attackerEntity,
-        (entity) -> entity.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+    itemStack.hurtAndBreak(1, attackerEntity, EquipmentSlot.MAINHAND);
     return true;
   }
 
@@ -68,14 +60,13 @@ public class ToolItem extends Item {
   public boolean mineBlock(ItemStack stack, Level worldIn, BlockState state, BlockPos pos,
       LivingEntity entityLiving) {
     if (state.getDestroySpeed(worldIn, pos) != 0.0F) {
-      stack.hurtAndBreak(2, entityLiving,
-          (entity) -> entity.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+      stack.hurtAndBreak(2, entityLiving, EquipmentSlot.MAINHAND);
     }
     return true;
   }
 
   @Override
-  public boolean isCorrectToolForDrops(BlockState blockIn) {
+  public boolean isCorrectToolForDrops(ItemStack itemStack, BlockState blockIn) {
     return blockIn.is(Blocks.COBWEB);
   }
 }

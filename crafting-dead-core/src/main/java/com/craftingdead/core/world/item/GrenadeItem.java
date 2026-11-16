@@ -18,6 +18,8 @@
 
 package com.craftingdead.core.world.item;
 
+import net.minecraft.network.chat.Component;
+
 
 import java.util.List;
 import java.util.function.BiFunction;
@@ -31,11 +33,9 @@ import com.craftingdead.core.world.entity.grenade.Grenade;
 import com.craftingdead.core.world.item.combatslot.CombatSlot;
 import com.craftingdead.core.world.item.combatslot.CombatSlotProvider;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockSource;
+import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
@@ -71,9 +71,9 @@ public class GrenadeItem extends Item {
   }
 
   @Override
-  public void appendHoverText(ItemStack item, @Nullable Level level,
+  public void appendHoverText(ItemStack item, Item.TooltipContext level,
       List<Component> lines, TooltipFlag tooltipFlag) {
-    lines.add(new TranslatableComponent("grenade.information").withStyle(ChatFormatting.GRAY));
+    lines.add(Component.translatable("grenade.information").withStyle(ChatFormatting.GRAY));
   }
 
   @Override
@@ -114,7 +114,7 @@ public class GrenadeItem extends Item {
   }
 
   @Override
-  public ICapabilityProvider initCapabilities(ItemStack itemStack, @Nullable CompoundTag nbt) {
+  public ICapabilityProvider getCapabilityProvider(ItemStack itemStack) {
     return CapabilityUtil.provider(() -> CombatSlot.GRENADE, CombatSlotProvider.CAPABILITY);
   }
 
@@ -154,15 +154,15 @@ public class GrenadeItem extends Item {
     protected ItemStack execute(BlockSource source, ItemStack itemStack) {
       if (ServerConfig.instance.explosivesDispenseGrenades.get()
           && itemStack.getItem() instanceof GrenadeItem grenadeItem) {
-        var direction = source.getBlockState().getValue(DispenserBlock.FACING);
-        var grenadeEntity = grenadeItem.grenadeEntitySupplier.apply(null, source.getLevel());
-        var position = DispenserBlock.getDispensePosition(source);
+        var direction = source.state().getValue(DispenserBlock.FACING);
+        var grenadeEntity = grenadeItem.grenadeEntitySupplier.apply(null, source.level());
+        var position = source.center();
 
         grenadeEntity.setPos(position.x(), position.y(), position.z());
         grenadeEntity.shoot(direction.getStepX(), direction.getStepY(), direction.getStepZ(),
             grenadeItem.throwSpeed, 1.0F);
         grenadeEntity.setSticky(grenadeItem.isSticky);
-        source.getLevel().addFreshEntity(grenadeEntity);
+        source.level().addFreshEntity(grenadeEntity);
 
         itemStack.shrink(1);
         return itemStack;
@@ -173,9 +173,9 @@ public class GrenadeItem extends Item {
 
     @Override
     protected void playSound(BlockSource source) {
-      source.getLevel().playSound(null, source.x(), source.y(), source.z(),
+      source.level().playSound(null, source.pos(),
           SoundEvents.SNOWBALL_THROW, SoundSource.BLOCKS, 0.5F,
-          0.4F / (source.getLevel().getRandom().nextFloat() * 0.4F + 0.8F));
+          0.4F / (source.level().getRandom().nextFloat() * 0.4F + 0.8F));
     }
   }
 }

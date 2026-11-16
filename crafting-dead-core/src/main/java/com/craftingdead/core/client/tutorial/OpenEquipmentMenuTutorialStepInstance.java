@@ -18,18 +18,17 @@
 
 package com.craftingdead.core.client.tutorial;
 
+import net.minecraft.network.chat.Component;
+
 import com.craftingdead.core.client.ClientDist;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.TutorialToast;
 import net.minecraft.client.tutorial.Tutorial;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
-
 public class OpenEquipmentMenuTutorialStepInstance implements ModTutorialStepInstance {
   private static final Component TITLE =
-      new TranslatableComponent("tutorial.open_equipment_menu.title");
+      Component.translatable("tutorial.open_equipment_menu.title");
   private static final Component DESCRIPTION =
-      new TranslatableComponent("tutorial.open_equipment_menu.description",
+      Component.translatable("tutorial.open_equipment_menu.description",
           Tutorial.key("equipment_menu"));
 
   private final ClientDist client;
