@@ -58,15 +58,7 @@ public record SyncGunEquipmentSlotMessage(int entityId, EquipmentSlot slot, Frie
           .getCapability(Gun.CAPABILITY);
       if (gunOpt.isPresent()) {
         var gun = gunOpt.orElse(null);
-        com.mojang.logging.LogUtils.getLogger().info(
-            "[CD-DBG] SyncGunEquipmentSlot.handle entityId={} slot={} dataBytes={} gun={}",
-            this.entityId, this.slot, this.data.readableBytes(),
-            System.identityHashCode(gun));
         gun.decode(this.data);
-      } else {
-        com.mojang.logging.LogUtils.getLogger().info(
-            "[CD-DBG] SyncGunEquipmentSlot.handle entityId={} slot={} NO GUN CAPABILITY",
-            this.entityId, this.slot);
       }
     });
     return true;

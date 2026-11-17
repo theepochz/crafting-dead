@@ -7,6 +7,8 @@
     "AbstractContainerMenuMixin",
     "EntityMixin",
     "ItemEntityMixin",
+    "ItemStackMixin",
+    "CapabilityProviderAccessor",
     "ItemRendererMixin",
     "ExplosionMixin",
     "LivingEntityMixin",

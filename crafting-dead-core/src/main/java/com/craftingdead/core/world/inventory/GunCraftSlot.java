@@ -32,6 +32,10 @@ import net.minecraft.world.inventory.ResultContainer;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
+/**
+ * The gun slot that the player interacts with in the equipment menu. All attachment/paint
+ * bookkeeping happens against the REAL equipped stack - no copies, no result slot.
+ */
 public class GunCraftSlot extends Slot {
 
   private final SimpleContainer craftingInventory;
@@ -47,30 +51,39 @@ public class GunCraftSlot extends Slot {
     return itemStack.getItem() instanceof GunItem;
   }
 
+  /**
+   * Server-authoritative path: every player interaction (pick up, swap, place) ends up here.
+   * When a gun is dropped into the slot, its attachments and paint are stripped into the
+   * crafting slots so they can be swapped around.
+   */
   @Override
-  public void set(ItemStack itemStack) {
+  public void setByPlayer(ItemStack itemStack, ItemStack previous) {
     itemStack.getCapability(Gun.CAPABILITY).ifPresent(gun -> {
-      gun.getAttachments().forEach(
-          (type, attachment) -> this.craftingInventory.setItem(type.getIndex(),
-              new ItemStack(attachment)));
+      gun.getAttachments().forEach((type, attachment) -> this.craftingInventory
+          .setItem(type.getIndex(), new ItemStack(attachment)));
       gun.setAttachments(Collections.emptyMap());
 
-      this.craftingInventory.setItem(GunCraftSlotType.PAINT.getIndex(),
-          gun.getPaintStack());
-      gun.setPaintStack(ItemStack.EMPTY);
+      if (!gun.getPaintStack().isEmpty()) {
+        this.craftingInventory.setItem(GunCraftSlotType.PAINT.getIndex(), gun.getPaintStack());
+        gun.setPaintStack(ItemStack.EMPTY);
+      }
     });
-    super.set(itemStack);
+    super.setByPlayer(itemStack, previous);
   }
 
   @Override
   public void onTake(Player playerEntity, ItemStack gunStack) {
+    // Gathers whatever is sitting in the crafting slots back onto the gun.
     gunStack.getCapability(Gun.CAPABILITY).ifPresent(gun -> {
-      gun.setPaintStack(ItemStack.EMPTY);
       Map<GunCraftSlotType, Attachment> attachments = new HashMap<>();
       for (int i = 0; i < this.craftingInventory.getContainerSize(); i++) {
         ItemStack itemStack = this.craftingInventory.getItem(i);
-        if (gun.isAcceptedAttachment(itemStack) && itemStack.getItem() instanceof AttachmentLike) {
-          var attachment = ((AttachmentLike) itemStack.getItem()).asAttachment();
+        if (itemStack.isEmpty()) {
+          continue;
+        }
+        if (itemStack.getItem() instanceof AttachmentLike attachmentLike
+            && gun.isAcceptedAttachment(itemStack)) {
+          var attachment = attachmentLike.asAttachment();
           attachments.put(attachment.getInventorySlot(), attachment);
           this.craftingInventory.setItem(i, ItemStack.EMPTY);
         } else if (Paint.isValid(gunStack, itemStack)) {
@@ -80,5 +93,6 @@ public class GunCraftSlot extends Slot {
       }
       gun.setAttachments(attachments);
     });
+    super.onTake(playerEntity, gunStack);
   }
 }

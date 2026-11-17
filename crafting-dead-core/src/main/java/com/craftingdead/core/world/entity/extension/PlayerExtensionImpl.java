@@ -289,7 +289,7 @@ final class PlayerExtensionImpl<E extends Player>
     var tag = super.serializeNBT(provider);
     var handcuffs = this.getHandcuffs();
     if (!handcuffs.isEmpty()) {
-      tag.put("handcuffs", handcuffs.save(provider));
+      tag.put("handcuffs", handcuffs.saveOptional(provider));
     }
     return tag;
   }

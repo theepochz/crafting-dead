@@ -20,6 +20,8 @@ package com.craftingdead.core.world.item.gun;
 
 import com.craftingdead.core.ServerConfig;
 import com.craftingdead.core.world.item.gun.attachment.Attachments;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
@@ -97,7 +99,13 @@ public abstract class AbstractGunClient<T extends AbstractGun> implements GunCli
         && this.livingHitValidationBuffer.size() > 0
         && this.hitValidationTicks++ >= AbstractGun.HIT_VALIDATION_DELAY_TICKS) {
       this.hitValidationTicks = 0;
-      NetworkChannel.PLAY.getSimpleChannel().send(new ValidatePendingHitMessage(new HashMap<>(this.livingHitValidationBuffer.asMap())), net.minecraftforge.network.PacketDistributor.SERVER.noArg());
+      // Deep-copy the collections: encode runs asynchronously on the network thread,
+      // so the live multimap views would be emptied by the clear() below before the
+      // encoder runs, producing packets with empty pending hit lists.
+      var pendingHits = new HashMap<Integer, Collection<PendingHit>>();
+      this.livingHitValidationBuffer.asMap()
+          .forEach((key, values) -> pendingHits.put(key, new ArrayList<>(values)));
+      NetworkChannel.PLAY.getSimpleChannel().send(new ValidatePendingHitMessage(pendingHits), net.minecraftforge.network.PacketDistributor.SERVER.noArg());
       this.livingHitValidationBuffer.clear();
     }
 

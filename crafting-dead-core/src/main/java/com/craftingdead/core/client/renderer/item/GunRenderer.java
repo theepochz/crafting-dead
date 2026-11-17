@@ -517,6 +517,11 @@ public class GunRenderer implements CombatSlotItemRenderer {
       MultiBufferSource renderTypeBuffer, int packedLight, int packedOverlay) {
     poseStack.pushPose();
     {
+      // Models rendered through this path are either the gun itself (whose item
+      // transform was already applied by the caller) or children of the gun (magazine,
+      // iron sights, attachments) which are authored in the gun's model space.
+      // Applying an item transform again would push them out of the gun and leave them
+      // unlit/appearing black, so it is deliberately skipped here.
       poseStack.translate(-0.5D, -0.5D, -0.5D);
       VertexConsumer vertexBuilder = ItemRenderer.getFoilBuffer(renderTypeBuffer,
           Sheets.translucentCullBlockSheet(), true, foil);
@@ -564,7 +569,7 @@ public class GunRenderer implements CombatSlotItemRenderer {
               Map.of(GUN_TEXTURE_REFERENCE, Either.left(skinTextureLocation == null
                   ? this.getGunRenderMaterial()
                   : new Material(InventoryMenu.BLOCK_ATLAS, skinTextureLocation))));
-          this.renderBakedModel(bakedModel, foil, colour, transformType, matrixStack,
+          this.renderBakedModel(bakedModel, foil, colour, ItemDisplayContext.NONE, matrixStack,
               renderTypeBuffer, packedLight, packedOverlay);
         }
         matrixStack.popPose();
@@ -582,7 +587,7 @@ public class GunRenderer implements CombatSlotItemRenderer {
             getAttachmentModelLocation(
                 net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(attachment.asItem())),
             null);
-        this.renderBakedModel(bakedModel, foil, colour, transformType, matrixStack,
+        this.renderBakedModel(bakedModel, foil, colour, ItemDisplayContext.NONE, matrixStack,
             renderTypeBuffer, packedLight, packedOverlay);
       }
       matrixStack.popPose();
@@ -610,7 +615,10 @@ public class GunRenderer implements CombatSlotItemRenderer {
               ? this.getGunRenderMaterial()
               : new Material(InventoryMenu.BLOCK_ATLAS, skinTextureLocation))));
 
-      this.renderBakedModel(magazineBakedModel, foil, color, transformType, poseStack,
+      // The magazine model is positioned in the gun's model space, which is already
+      // transformed by the gun's item transform. Passing ItemDisplayContext.NONE keeps
+      // the baked model's own transform out of the way.
+      this.renderBakedModel(magazineBakedModel, foil, color, ItemDisplayContext.NONE, poseStack,
           renderTypeBuffer, packedLight, packedOverlay);
     }
     poseStack.popPose();

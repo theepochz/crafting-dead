@@ -880,7 +880,14 @@ public abstract class AbstractGun implements Gun, INBTSerializable<CompoundTag> 
 
   @Override
   public void setAttachments(Map<GunCraftSlotType, Attachment> attachments) {
-    this.attachments = Map.copyOf(attachments);
+    var newAttachments = Map.copyOf(attachments);
+    if (newAttachments.equals(this.attachments)) {
+      return;
+    }
+    this.attachments = newAttachments;
+    // Without this the change is never pushed to clients nor flagged for the
+    // equipment sync, so a freshly installed attachment would silently be dropped.
+    this.attachmentsDirty = true;
   }
 
   @Override
@@ -997,7 +1004,7 @@ public abstract class AbstractGun implements Gun, INBTSerializable<CompoundTag> 
     return this.itemStack;
   }
 
-  @Override
+    @Override
   public CompoundTag serializeNBT(HolderLookup.Provider provider) {
     var tag = new CompoundTag();
     if (!this.initialized) {
@@ -1011,7 +1018,7 @@ public abstract class AbstractGun implements Gun, INBTSerializable<CompoundTag> 
         .map(StringTag::valueOf)
         .collect(ListTag::new, ListTag::add, List::addAll);
     tag.put("attachments", attachmentsTag);
-    tag.put("paintStack", this.getPaintStack().save(provider));
+    tag.put("paintStack", this.getPaintStack().saveOptional(provider));
     if (this.skin != null) {
       tag.put("skin", Skin.CODEC.encodeStart(NbtOps.INSTANCE, this.skin)
           .getOrThrow(error -> new IllegalStateException(error)));
@@ -1019,7 +1026,7 @@ public abstract class AbstractGun implements Gun, INBTSerializable<CompoundTag> 
     return tag;
   }
 
-  @Override
+    @Override
   public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
     if (tag.contains("ammoProviderType", Tag.TAG_STRING)) {
       this.setAmmoProvider(AmmoProviderTypes.registry.get().getValue(

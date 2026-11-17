@@ -211,16 +211,6 @@ public class IngameGui {
 
     AmmoProvider ammoProvider = gun.getAmmoProvider();
     int ammoCount = ammoProvider.getMagazine().map(Magazine::getSize).orElse(0);
-    // TEMPORARY DEBUG: identify why ammo shows 0 on the client.
-    if (com.craftingdead.core.CraftingDead.getInstance() != null && ammoCount == 0
-        && this.minecraft.player != null && this.minecraft.player.tickCount % 40 == 0) {
-      com.mojang.logging.LogUtils.getLogger().info(
-          "[CD-DBG] renderAmmo provider={} magStack={} magCap={} providerClass={}",
-          System.identityHashCode(ammoProvider),
-          ammoProvider.getMagazineStack().isEmpty() ? "EMPTY" : ammoProvider.getMagazineStack(),
-          ammoProvider.getMagazine().isPresent(),
-          ammoProvider.getClass().getSimpleName());
-    }
     int reserveSize = ammoProvider.getReserveSize();
     var empty = ammoCount == 0 && reserveSize == 0;
 

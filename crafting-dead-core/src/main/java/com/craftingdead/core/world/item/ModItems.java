@@ -1994,6 +1994,37 @@ public class ModItems {
 
   public static void addCreativeTabItems(net.minecraftforge.event.BuildCreativeModeTabContentsEvent event) {
     if (event.getTabKey() == COSMETICS_TAB.getKey()) {
+      // Vests
+      event.accept(BLACK_TACTICAL_VEST.get());
+      event.accept(GHILLIE_TACTICAL_VEST.get());
+      event.accept(GREEN_TACTICAL_VEST.get());
+      event.accept(GREY_TACTICAL_VEST.get());
+      event.accept(RIOT_VEST.get());
+      event.accept(TAN_TACTICAL_VEST.get());
+      // Backpacks & gun bags
+      event.accept(SMALL_RED_BACKPACK.get());
+      event.accept(SMALL_ORANGE_BACKPACK.get());
+      event.accept(SMALL_YELLOW_BACKPACK.get());
+      event.accept(SMALL_GREEN_BACKPACK.get());
+      event.accept(SMALL_BLUE_BACKPACK.get());
+      event.accept(SMALL_PURPLE_BACKPACK.get());
+      event.accept(MEDIUM_RED_BACKPACK.get());
+      event.accept(MEDIUM_ORANGE_BACKPACK.get());
+      event.accept(MEDIUM_YELLOW_BACKPACK.get());
+      event.accept(MEDIUM_GREEN_BACKPACK.get());
+      event.accept(MEDIUM_BLUE_BACKPACK.get());
+      event.accept(MEDIUM_PURPLE_BACKPACK.get());
+      event.accept(MEDIUM_GREY_BACKPACK.get());
+      event.accept(MEDIUM_BLACK_BACKPACK.get());
+      event.accept(MEDIUM_GHILLIE_BACKPACK.get());
+      event.accept(MEDIUM_WHITE_BACKPACK.get());
+      event.accept(LARGE_GREY_BACKPACK.get());
+      event.accept(LARGE_GREEN_BACKPACK.get());
+      event.accept(LARGE_TAN_BACKPACK.get());
+      event.accept(LARGE_BLACK_BACKPACK.get());
+      event.accept(LARGE_GHILLIE_BACKPACK.get());
+      event.accept(TAN_GUN_BAG.get());
+      event.accept(GREY_GUN_BAG.get());
       event.accept(ARMY_HELMET.get());
       event.accept(BEANIE_HAT.get());
       event.accept(BLACK_BALLISTIC_HAT.get());
@@ -2082,6 +2113,39 @@ public class ModItems {
       event.accept(CONTRACTOR_CLOTHING.get());
     }
     if (event.getTabKey() == COMBAT_TAB.getKey()) {
+      // Guns
+      event.accept(M4A1.get());
+      event.accept(SCARL.get());
+      event.accept(AK47.get());
+      event.accept(FNFAL.get());
+      event.accept(ACR.get());
+      event.accept(HK417.get());
+      event.accept(MPT55.get());
+      event.accept(M1GARAND.get());
+      event.accept(SPORTER22.get());
+      event.accept(G36C.get());
+      event.accept(M240B.get());
+      event.accept(RPK.get());
+      event.accept(MINIGUN.get());
+      event.accept(MK48MOD.get());
+      event.accept(TASER.get());
+      event.accept(M1911.get());
+      event.accept(G18.get());
+      event.accept(M9.get());
+      event.accept(DESERT_EAGLE.get());
+      event.accept(P250.get());
+      event.accept(MAGNUM.get());
+      event.accept(FN57.get());
+      event.accept(MAC10.get());
+      event.accept(P90.get());
+      event.accept(VECTOR.get());
+      event.accept(MP5A5.get());
+      event.accept(M107.get());
+      event.accept(AS50.get());
+      event.accept(AWP.get());
+      event.accept(DMR.get());
+      event.accept(TRENCH_GUN.get());
+      event.accept(MOSSBERG.get());
       event.accept(VULCAN_PAINT.get());
       event.accept(ASMO_PAINT.get());
       event.accept(CANDY_APPLE_PAINT.get());

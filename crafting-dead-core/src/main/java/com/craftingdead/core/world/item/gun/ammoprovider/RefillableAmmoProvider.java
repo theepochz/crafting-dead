@@ -101,7 +101,7 @@ public class RefillableAmmoProvider implements AmmoProvider {
   @Override
   public CompoundTag serializeNBT(HolderLookup.Provider provider) {
     CompoundTag nbt = new CompoundTag();
-    nbt.put("magazineStack", this.magazineStack.save(provider));
+    nbt.put("magazineStack", this.magazineStack.saveOptional(provider));
     nbt.putInt("reserveSize", this.reserveSize);
     nbt.putBoolean("infiniteAmmo", this.infiniteAmmo);
     return nbt;

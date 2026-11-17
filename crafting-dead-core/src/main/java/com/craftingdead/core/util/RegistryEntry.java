@@ -40,4 +40,26 @@ public abstract class RegistryEntry<V> {
     }
     return this.registryName;
   }
+
+  @Override
+  public boolean equals(@Nullable Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null || this.getClass() != obj.getClass()) {
+      return false;
+    }
+    var that = (RegistryEntry<V>) obj;
+    var thisName = this.getRegistryName();
+    var thatName = that.getRegistryName();
+    return thisName != null && thisName.equals(thatName);
+  }
+
+  @Override
+  public int hashCode() {
+    // NOTE: must never trigger getRegistryName() - the Forge registry looks items up by
+    // their own hashCode, so resolving the name here causes infinite recursion. Registry
+    // entries are singletons, so identity hash is correct and stable.
+    return System.identityHashCode(this);
+  }
 }

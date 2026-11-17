@@ -19,6 +19,7 @@
 package com.craftingdead.core.world.inventory;
 
 import java.util.function.BiPredicate;
+import javax.annotation.Nullable;
 import com.craftingdead.core.world.entity.extension.PlayerExtension;
 import com.craftingdead.core.world.item.equipment.Equipment;
 import com.craftingdead.core.world.item.gun.Gun;
@@ -28,13 +29,12 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ResultContainer;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import com.craftingdead.core.world.item.GunItem;
 
 public class EquipmentMenu extends AbstractContainerMenu {
 
-  private final ResultContainer outputContainer = new ResultContainer();
   private final SimpleContainer craftingContainer = new SimpleContainer(4);
 
   private final PlayerExtension<?> player;
@@ -87,18 +87,15 @@ public class EquipmentMenu extends AbstractContainerMenu {
     int weaponColumnY = 8;
 
     this.addSlot(new EquipmentSlot(player,
-        Equipment.Slot.GUN,
-        weaponColumnX, weaponColumnY));
-
-    this.addSlot(new EquipmentSlot(player,
         Equipment.Slot.MELEE,
-        weaponColumnX, weaponColumnY + slotSize));
+        weaponColumnX, weaponColumnY));
 
     final int gunCraftSlotGap = 2;
     final int gunCraftY = 6;
     final int gunCraftX = 115;
 
-    this.addSlot(new GunCraftSlot(this.outputContainer, 0,
+    // The gun slot IS the crafting interaction point (center of the crafting grid).
+    this.addSlot(new GunEquipmentSlot(player,
         gunCraftX + slotSize + gunCraftSlotGap,
         gunCraftY + slotSize + gunCraftSlotGap,
         this.craftingContainer));
@@ -133,6 +130,8 @@ public class EquipmentMenu extends AbstractContainerMenu {
         gunCraftX + slotSize * 2 + gunCraftSlotGap * 2,
         gunCraftY + slotSize + gunCraftSlotGap,
         (slot, itemStack) -> Paint.isValid(this.getGunStack(), itemStack)));
+
+    this.loadEquippedGun();
   }
 
   public PlayerExtension<?> getPlayer() {
@@ -148,13 +147,53 @@ public class EquipmentMenu extends AbstractContainerMenu {
   public void removed(Player player) {
     super.removed(player);
     if (!player.level().isClientSide()) {
+      // Put back whatever attachments the player left in the crafting slots.
+      var gunStack = this.getGunStack();
+      if (!gunStack.isEmpty()) {
+        gunStack.getCapability(Gun.CAPABILITY).ifPresent(gun -> {
+          var attachments = new java.util.HashMap<>(gun.getAttachments());
+          for (int i = 0; i < this.craftingContainer.getContainerSize(); i++) {
+            var itemStack = this.craftingContainer.getItem(i);
+            if (itemStack.isEmpty()) {
+              continue;
+            }
+            if (itemStack.getItem() instanceof com.craftingdead.core.world.item.gun.attachment.AttachmentLike attachmentLike
+                && gun.isAcceptedAttachment(itemStack)) {
+              var attachment = attachmentLike.asAttachment();
+              attachments.put(attachment.getInventorySlot(), attachment);
+              this.craftingContainer.setItem(i, ItemStack.EMPTY);
+            } else if (Paint.isValid(gunStack, itemStack)) {
+              gun.setPaintStack(itemStack);
+              this.craftingContainer.setItem(i, ItemStack.EMPTY);
+            }
+          }
+          gun.setAttachments(attachments);
+        });
+      }
       this.clearContainer(player, this.craftingContainer);
-      this.clearContainer(player, this.outputContainer);
     }
   }
 
   public ItemStack getGunStack() {
-    return this.outputContainer.getItem(0);
+    return this.player.getItemInSlot(Equipment.Slot.GUN);
+  }
+
+  /**
+   * Loads the currently equipped gun's attachments into the crafting slots so they can be
+   * swapped around. The gun itself stays in its equipment slot - no copies are made.
+   */
+  private void loadEquippedGun() {
+    var gunStack = this.getGunStack();
+    if (gunStack.isEmpty() || !(gunStack.getItem() instanceof GunItem)) {
+      return;
+    }
+    gunStack.getCapability(Gun.CAPABILITY).ifPresent(gun -> {
+      gun.getAttachments().forEach((type, attachment) -> this.craftingContainer
+          .setItem(type.getIndex(), new ItemStack(attachment)));
+      if (!gun.getPaintStack().isEmpty()) {
+        this.craftingContainer.setItem(GunCraftSlotType.PAINT.getIndex(), gun.getPaintStack());
+      }
+    });
   }
 
   public boolean isCraftingInventoryEmpty() {

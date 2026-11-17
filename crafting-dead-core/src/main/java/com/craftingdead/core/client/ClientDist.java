@@ -358,7 +358,28 @@ public class ClientDist implements ModDist {
     }
     for (var location : this.itemRenderDispatcher.gatherItemRenderers(resourceManager,
         net.minecraft.util.profiling.InactiveProfiler.INSTANCE)) {
+      // Skip dependencies whose model file does not actually exist (some magazines
+      // share models or have no dedicated 3D model); registering them would just
+      // produce bake warnings and missing-model fallbacks.
+      var modelLocation = ResourceLocation.fromNamespaceAndPath(location.getNamespace(),
+          "models/" + location.getPath() + ".json");
+      if (!resourceManager.getResource(modelLocation).isPresent()) {
+        continue;
+      }
       event.register(ModelResourceLocation.inventory(location));
+    }
+
+    // Register every auxiliary model (magazines and attachments) that exists on disk.
+    // Those are rendered as children of the gun and must be resolvable regardless of
+    // which renderer dependencies a given gun happens to declare.
+    for (var directory : new String[] {"magazine", "attachment"}) {
+      for (var resource : resourceManager.listResources(directory,
+          path -> path.getPath().endsWith(".json")).keySet()) {
+        var path = resource.getPath();
+        var location = ResourceLocation.fromNamespaceAndPath(resource.getNamespace(),
+            path.substring("models/".length(), path.length() - ".json".length()));
+        event.register(ModelResourceLocation.inventory(location));
+      }
     }
   }
 

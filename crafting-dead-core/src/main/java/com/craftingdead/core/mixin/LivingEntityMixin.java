@@ -60,9 +60,6 @@ public abstract class LivingEntityMixin {
         currentStack.getCapability(Gun.CAPABILITY)
             .filter(Gun::requiresSync)
             .ifPresent(gun -> {
-              com.mojang.logging.LogUtils.getLogger().info(
-                  "[CD-DBG] gun sync SEND entity={} slot={} requiresSync=true",
-                  livingEntity.getId(), slotType);
               NetworkChannel.PLAY.getSimpleChannel().send(new SyncGunEquipmentSlotMessage(livingEntity.getId(), slotType, gun, false), PacketDistributor.TRACKING_ENTITY_AND_SELF.with(livingEntity));
             });
       }
