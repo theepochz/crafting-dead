@@ -37,7 +37,7 @@ public record BlockDestroyParticleMessage(BlockPos pos, BlockState state) {
     return new BlockDestroyParticleMessage(buf.readBlockPos(), Block.stateById(buf.readVarInt()));
   }
 
-  public static void handle(BlockDestroyParticleMessage msg, CustomPayloadEvent.Context ctx) {
+  public static boolean handle(BlockDestroyParticleMessage msg, CustomPayloadEvent.Context ctx) {
     ctx.enqueueWork(() -> {
       var player = Minecraft.getInstance().player;
       if (player != null) {
@@ -45,6 +45,6 @@ public record BlockDestroyParticleMessage(BlockPos pos, BlockState state) {
         player.level().addDestroyBlockEffect(msg.pos(), state);
       }
     });
-    ctx.setPacketHandled(true);
+    return true;
   }
 }

@@ -9,50 +9,16 @@
   },
   "perspectives": {
     "thirdperson_righthand": {
-      "loader": "forge:composite",
-      "parts": {
-        "pistol_is1": {
-          "parent": "craftingdead:item/attachments/pistol_is1/pistol_is1"
-        },
-        "pistol_is2": {
-          "parent": "craftingdead:item/attachments/pistol_is2/pistol_is2"
-        }
-      }
+      "parent": "craftingdead:attachment/m1911_iron_sight"
     },
     "thirdperson_lefthand": {
-      "loader": "forge:composite",
-      "parts": {
-        "pistol_is1": {
-          "parent": "craftingdead:item/attachments/pistol_is1/pistol_is1"
-        },
-        "pistol_is2": {
-          "parent": "craftingdead:item/attachments/pistol_is2/pistol_is2"
-        }
-      }
+      "parent": "craftingdead:attachment/m1911_iron_sight"
     },
     "firstperson_righthand": {
-      "model": {
-        "loader": "forge:composite",
-        "parts": {
-          "pistol_is1": {
-            "parent": "craftingdead:item/attachments/pistol_is1/pistol_is1"
-          },
-          "pistol_is2": {
-            "parent": "craftingdead:item/attachments/pistol_is2/pistol_is2"
-          }
-        }
-      }
+      "parent": "craftingdead:attachment/m1911_iron_sight"
     },
     "firstperson_lefthand": {
-      "loader": "forge:composite",
-      "parts": {
-        "pistol_is1": {
-          "parent": "craftingdead:item/attachments/pistol_is1/pistol_is1"
-        },
-        "pistol_is2": {
-          "parent": "craftingdead:item/attachments/pistol_is2/pistol_is2"
-        }
-      }
+      "parent": "craftingdead:attachment/m1911_iron_sight"
     }
   }
 }

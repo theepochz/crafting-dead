@@ -37,7 +37,7 @@ public record SyncGunContainerSlotMessage(int entityId, int slot, FriendlyByteBu
     out.writeVarInt(this.entityId);
     out.writeShort(this.slot);
     out.writeVarInt(this.data.readableBytes());
-    out.writeBytes(this.data);
+    out.writeBytes(this.data.duplicate());
   }
 
   public static SyncGunContainerSlotMessage decode(FriendlyByteBuf in) {

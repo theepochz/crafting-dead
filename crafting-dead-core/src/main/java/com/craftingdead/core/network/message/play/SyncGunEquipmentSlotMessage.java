@@ -39,7 +39,7 @@ public record SyncGunEquipmentSlotMessage(int entityId, EquipmentSlot slot, Frie
     out.writeVarInt(this.entityId);
     out.writeEnum(this.slot);
     out.writeVarInt(this.data.readableBytes());
-    out.writeBytes(this.data);
+    out.writeBytes(this.data.duplicate());
   }
 
   public static SyncGunEquipmentSlotMessage decode(FriendlyByteBuf in) {
@@ -52,10 +52,23 @@ public record SyncGunEquipmentSlotMessage(int entityId, EquipmentSlot slot, Frie
   }
 
   public boolean handle(CustomPayloadEvent.Context ctx) {
-    ctx.enqueueWork(() -> NetworkUtil.getEntity(ctx, this.entityId, LivingEntity.class)
-        .getItemBySlot(this.slot)
-        .getCapability(Gun.CAPABILITY)
-        .ifPresent(gun -> gun.decode(this.data)));
+    ctx.enqueueWork(() -> {
+      var gunOpt = NetworkUtil.getEntity(ctx, this.entityId, LivingEntity.class)
+          .getItemBySlot(this.slot)
+          .getCapability(Gun.CAPABILITY);
+      if (gunOpt.isPresent()) {
+        var gun = gunOpt.orElse(null);
+        com.mojang.logging.LogUtils.getLogger().info(
+            "[CD-DBG] SyncGunEquipmentSlot.handle entityId={} slot={} dataBytes={} gun={}",
+            this.entityId, this.slot, this.data.readableBytes(),
+            System.identityHashCode(gun));
+        gun.decode(this.data);
+      } else {
+        com.mojang.logging.LogUtils.getLogger().info(
+            "[CD-DBG] SyncGunEquipmentSlot.handle entityId={} slot={} NO GUN CAPABILITY",
+            this.entityId, this.slot);
+      }
+    });
     return true;
   }
 }

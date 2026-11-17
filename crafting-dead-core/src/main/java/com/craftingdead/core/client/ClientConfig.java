@@ -43,14 +43,14 @@ public class ClientConfig {
       this.killSound = builder
           .translation("options.craftingdead.client.kill_sound")
           .define("killSound", SoundEvents.TRIDENT_RETURN.getLocation().toString(),
-              v -> v instanceof String && net.minecraft.resources.ResourceLocation.isValidPath((String) v));
+              v -> v instanceof String s && net.minecraft.resources.ResourceLocation.tryParse(s) != null);
       this.tutorialStep = builder
           .comment("Internal")
           .defineEnum("tutorialStep", ModTutorialSteps.OPEN_EQUIPMENT_MENU);
       this.crosshair = builder
           .translation("options.craftingdead.client.crosshair")
           .define("crosshair", CrosshairManager.DEFAULT_CROSSHAIR.toString(),
-              o -> o instanceof String s && net.minecraft.resources.ResourceLocation.isValidPath(s));
+              o -> o instanceof String s && net.minecraft.resources.ResourceLocation.tryParse(s) != null);
     }
     builder.pop();
   }

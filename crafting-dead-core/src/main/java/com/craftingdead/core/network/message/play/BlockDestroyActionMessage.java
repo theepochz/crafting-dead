@@ -36,7 +36,7 @@ public record BlockDestroyActionMessage(BlockPos pos) {
     return new BlockDestroyActionMessage(buf.readBlockPos());
   }
 
-  public static void handle(BlockDestroyActionMessage msg, CustomPayloadEvent.Context ctx) {
+  public static boolean handle(BlockDestroyActionMessage msg, CustomPayloadEvent.Context ctx) {
     ctx.enqueueWork(() -> {
       var player = ctx.getSender();
       if (player != null) {
@@ -49,7 +49,7 @@ public record BlockDestroyActionMessage(BlockPos pos) {
         }
       }
     });
-    ctx.setPacketHandled(true);
+    return true;
   }
 }
 

@@ -47,21 +47,28 @@ public abstract class LivingEntityMixin {
 
 
   // TODO - temp until https://github.com/MinecraftForge/MinecraftForge/pull/7630 gets merged
+  // NOTE: vanilla calls equipmentHasChanged(lastStack, currentStack) - the cached stack is
+  // passed first. The previous implementation had the parameters inverted (breaking gun sync
+  // for any gun equipped after initial tracking) and returned a value that suppressed
+  // vanilla's equipment change handling entirely.
   @Redirect(at = @At(value = "INVOKE",
       target = "Lnet/minecraft/world/entity/LivingEntity;equipmentHasChanged(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemStack;)Z"),
       method = "collectEquipmentChanges")
-  private boolean matches(LivingEntity livingEntity, ItemStack currentStack, ItemStack lastStack) {
-    if (!ItemStack.isSameItemSameComponents(currentStack, lastStack)) {
-      return false;
-    }
-
+  private boolean matches(LivingEntity livingEntity, ItemStack lastStack, ItemStack currentStack) {
     for (EquipmentSlot slotType : EquipmentSlot.values()) {
       if (currentStack == livingEntity.getItemBySlot(slotType)) {
         currentStack.getCapability(Gun.CAPABILITY)
             .filter(Gun::requiresSync)
-            .ifPresent(gun -> NetworkChannel.PLAY.getSimpleChannel().send(new SyncGunEquipmentSlotMessage(livingEntity.getId(), slotType, gun, false), PacketDistributor.TRACKING_ENTITY_AND_SELF.with(livingEntity)));
+            .ifPresent(gun -> {
+              com.mojang.logging.LogUtils.getLogger().info(
+                  "[CD-DBG] gun sync SEND entity={} slot={} requiresSync=true",
+                  livingEntity.getId(), slotType);
+              NetworkChannel.PLAY.getSimpleChannel().send(new SyncGunEquipmentSlotMessage(livingEntity.getId(), slotType, gun, false), PacketDistributor.TRACKING_ENTITY_AND_SELF.with(livingEntity));
+            });
       }
     }
-    return true;
+    // Preserve vanilla semantics: report a real change so vanilla keeps its caches in
+    // sync and broadcasts equipment updates to trackers.
+    return !ItemStack.matches(lastStack, currentStack);
   }
 }

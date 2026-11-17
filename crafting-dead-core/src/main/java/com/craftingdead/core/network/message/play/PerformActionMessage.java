@@ -36,8 +36,7 @@ public record PerformActionMessage(ActionType<?> actionType, int performerEntity
     out.writeById(actionRegistry::getID, this.actionType);
     out.writeVarInt(this.performerEntityId);
     out.writeVarInt(this.buf.readableBytes());
-    out.writeBytes(this.buf);
-    this.buf.release();
+    out.writeBytes(this.buf.duplicate());
   }
 
   public static PerformActionMessage decode(FriendlyByteBuf in) {

@@ -184,6 +184,7 @@ public class GunRenderer implements CombatSlotItemRenderer {
               packedOverlay);
           break;
         case HEAD:
+          poseStack.pushPose();
           poseStack.mulPose(this.properties.backTransform().getLeftRotation());
       poseStack.translate(this.properties.backTransform().getTranslation().x(),
           this.properties.backTransform().getTranslation().y(),
@@ -261,6 +262,8 @@ public class GunRenderer implements CombatSlotItemRenderer {
           partialTicks, poseStack);
       poseStack.translate(0.75F, -0.75F, -0.6F);
 
+      // Push + apply (matches 1.18 rightHandTransforms.push(poseStack) semantics)
+      poseStack.pushPose();
       poseStack.mulPose(rightHandTransforms.getLeftRotation());
       poseStack.translate(rightHandTransforms.getTranslation().x(), rightHandTransforms.getTranslation().y(), rightHandTransforms.getTranslation().z());
       poseStack.scale(rightHandTransforms.getScale().x(), rightHandTransforms.getScale().y(), rightHandTransforms.getScale().z());
@@ -289,6 +292,8 @@ public class GunRenderer implements CombatSlotItemRenderer {
 
       poseStack.translate(0.75F, -0.75F, -0.75F);
 
+      // Push + apply (matches 1.18 leftHandTransforms.push(poseStack) semantics)
+      poseStack.pushPose();
       poseStack.mulPose(leftHandTransforms.getLeftRotation());
       poseStack.translate(leftHandTransforms.getTranslation().x(), leftHandTransforms.getTranslation().y(), leftHandTransforms.getTranslation().z());
       poseStack.scale(leftHandTransforms.getScale().x(), leftHandTransforms.getScale().y(), leftHandTransforms.getScale().z());
@@ -406,6 +411,9 @@ public class GunRenderer implements CombatSlotItemRenderer {
     if (sprintingPct > 0) {
       var sprinting = Transformation.identity()
           .slerp(this.properties.sprintingTransform(), sprintingPct);
+      // Push first so the unconditional popPose below stays balanced (matches 1.18
+      // TransformationHelper.slerp(...).push(poseStack) semantics).
+      poseStack.pushPose();
       poseStack.mulPose(sprinting.getLeftRotation());
       poseStack.translate(sprinting.getTranslation().x(), sprinting.getTranslation().y(),
           sprinting.getTranslation().z());
@@ -476,6 +484,8 @@ public class GunRenderer implements CombatSlotItemRenderer {
         ? normalTransform.slerp(aimTransform, aimingPct)
         : normalTransform;
 
+    // Push + apply (matches 1.18 perspectiveTransform.push(poseStack) semantics)
+    poseStack.pushPose();
     poseStack.mulPose(perspectiveTransform.getLeftRotation());
       poseStack.translate(perspectiveTransform.getTranslation().x(),
           perspectiveTransform.getTranslation().y(), perspectiveTransform.getTranslation().z());
@@ -527,14 +537,9 @@ public class GunRenderer implements CombatSlotItemRenderer {
       @Nullable Map<String, Either<Material, String>> textures) {
     return this.cachedModels.computeIfAbsent(
         modelLocation.hashCode() + (textures == null ? 0 : textures.hashCode()), key -> {
-          if (textures != null) {
-            var bakery = this.minecraft.getModelManager().getModelBakery();
-            var model = bakery.getBakedTopLevelModels().get(toModelLocation(modelLocation));
-            // Custom textures overrides are no longer supported at bake-time in 1.21;
-            // fall back to the baked model from ModelManager.
-            return model != null ? model
-                : this.minecraft.getModelManager().getMissingModel();
-          }
+          // Custom textures overrides are no longer supported at bake-time in 1.21;
+          // fall back to the baked model from ModelManager (top-level registered models
+          // are included in the baked registry).
           return this.minecraft.getModelManager().getModel(toModelLocation(modelLocation));
         });
   }
@@ -618,6 +623,8 @@ public class GunRenderer implements CombatSlotItemRenderer {
   }
 
   private static void poseStack0Push(PoseStack poseStack, Transformation transform) {
+    // Push + apply (matches 1.18 transform.push(poseStack) semantics)
+    poseStack.pushPose();
     poseStack.mulPose(transform.getLeftRotation());
     poseStack.translate(transform.getTranslation().x(), transform.getTranslation().y(),
         transform.getTranslation().z());

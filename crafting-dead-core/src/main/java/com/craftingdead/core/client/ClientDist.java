@@ -106,6 +106,7 @@ import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.tutorial.Tutorial;
 import net.minecraft.client.tutorial.TutorialSteps;
@@ -125,6 +126,7 @@ import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.client.event.ComputeFovModifierEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
+import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.client.event.RenderLivingEvent;
@@ -135,6 +137,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoader;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -220,6 +223,7 @@ public class ClientDist implements ModDist {
     modBus.addListener(this::handleEntityRenderersAddLayers);
     modBus.addListener(this::handleEntityRenderersLayerDefinitions);
     modBus.addListener(this::handleRegisterClientReloadListeners);
+    modBus.addListener(this::handleRegisterAdditionalModels);
 
     MinecraftForge.EVENT_BUS.register(this);
     // Auto-updater moved to crafting-dead-updater mod (separate optional mod)
@@ -337,6 +341,25 @@ public class ClientDist implements ModDist {
   private void handleRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
     event.registerReloadListener(this.crosshairManager);
     event.registerReloadListener(this.itemRenderDispatcher);
+  }
+
+  /**
+   * Registers the models used by {@link CustomItemRenderer}s (gun bodies, attachments,
+   * magazines...) as top-level models so that they are baked alongside vanilla models.
+   * This has to run during the model bake, before models are resolved.
+   */
+  private void handleRegisterAdditionalModels(ModelEvent.RegisterAdditional event) {
+    if (!ModLoader.isLoadingStateValid()) {
+      return;
+    }
+    var resourceManager = this.minecraft.getResourceManager();
+    if (resourceManager == null) {
+      return;
+    }
+    for (var location : this.itemRenderDispatcher.gatherItemRenderers(resourceManager,
+        net.minecraft.util.profiling.InactiveProfiler.INSTANCE)) {
+      event.register(ModelResourceLocation.inventory(location));
+    }
   }
 
   /**

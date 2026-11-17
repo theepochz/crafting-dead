@@ -34,7 +34,7 @@ public record RightClickStateMessage(boolean isDown, int ticks) {
     return new RightClickStateMessage(buf.readBoolean(), buf.readInt());
   }
 
-  public static void handle(RightClickStateMessage msg, CustomPayloadEvent.Context ctx) {
+  public static boolean handle(RightClickStateMessage msg, CustomPayloadEvent.Context ctx) {
     ctx.enqueueWork(() -> {
       var player = ctx.getSender();
       if (player == null || !player.isAlive()) {
@@ -50,7 +50,7 @@ public record RightClickStateMessage(boolean isDown, int ticks) {
         extension.setRightClickTicks(0);
       }
     });
-    ctx.setPacketHandled(true);
+    return true;
   }
 }
 

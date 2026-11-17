@@ -28,9 +28,11 @@ import net.minecraftforge.event.network.CustomPayloadEvent;
 public record SyncLivingMessage(int entityId, FriendlyByteBuf data) {
 
   public void encode(FriendlyByteBuf out) {
+    // May be encoded multiple times (once per target connection); duplicate() keeps
+    // the internal buffer's indices untouched.
     out.writeVarInt(this.entityId);
     out.writeVarInt(this.data.readableBytes());
-    out.writeBytes(this.data);
+    out.writeBytes(this.data.duplicate());
   }
 
   public static SyncLivingMessage decode(FriendlyByteBuf in) {

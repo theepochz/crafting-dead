@@ -34,7 +34,7 @@ public record DamageHandcuffsMessage() {
     return new DamageHandcuffsMessage();
   }
 
-  public void handle(CustomPayloadEvent.Context context) {
+  public boolean handle(CustomPayloadEvent.Context context) {
     context.enqueueWork(() -> {
       ServerPlayer player = context.getSender();
       if (player != null) {
@@ -44,7 +44,7 @@ public record DamageHandcuffsMessage() {
         }
       }
     });
-    context.setPacketHandled(true);
+    return true;
   }
 }
 

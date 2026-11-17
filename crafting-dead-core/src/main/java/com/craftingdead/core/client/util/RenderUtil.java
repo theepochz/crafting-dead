@@ -43,6 +43,7 @@ import org.joml.Quaternionf;
 import com.mojang.math.Transformation;
 import org.joml.Vector3f;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -72,19 +73,32 @@ import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 
 public class RenderUtil {
 
-  private static final Codec<Vector3f> FLOAT_VECTOR_CODEC = RecordCodecBuilder.create(
-      instance -> instance.group(
-          Codec.FLOAT.fieldOf("x").forGetter(Vector3f::x),
-          Codec.FLOAT.fieldOf("y").forGetter(Vector3f::y),
-          Codec.FLOAT.fieldOf("z").forGetter(Vector3f::z))
-          .apply(instance, Vector3f::new));
+  private static final Codec<Vector3f> FLOAT_VECTOR_CODEC =
+      Codec.FLOAT.listOf().comapFlatMap(
+          list -> list.size() == 3
+              ? DataResult.success(new Vector3f(list.get(0), list.get(1), list.get(2)))
+              : DataResult.error(() -> "Expected 3 floats, got " + list.size()),
+          vec -> List.of(vec.x(), vec.y(), vec.z()));
 
+  /**
+   * Rotation is parsed as Euler angles in degrees, matching the original renderer JSON
+   * format (e.g. "rotation": [0, 20, 0]).
+   */
   public static final Codec<Quaternionf> QUATERNION_CODEC =
-      RecordCodecBuilder.create(instance -> instance.group(
-          Codec.FLOAT.fieldOf("x").forGetter(RenderUtil::eulerX),
-          Codec.FLOAT.fieldOf("y").forGetter(RenderUtil::eulerY),
-          Codec.FLOAT.fieldOf("z").forGetter(RenderUtil::eulerZ))
-          .apply(instance, (x, y, z) -> new Quaternionf().rotationXYZ(x, y, z)));
+      Codec.FLOAT.listOf().comapFlatMap(
+          list -> list.size() == 3
+              ? DataResult.success(new Quaternionf().rotationXYZ(
+                  (float) Math.toRadians(list.get(0)),
+                  (float) Math.toRadians(list.get(1)),
+                  (float) Math.toRadians(list.get(2))))
+              : DataResult.error(() -> "Expected 3 floats, got " + list.size()),
+          quat -> {
+            var v = quat.getEulerAnglesXYZ(new Vector3f());
+            return List.of(
+                (float) Math.toDegrees(v.x()),
+                (float) Math.toDegrees(v.y()),
+                (float) Math.toDegrees(v.z()));
+          });
 
   public static final Codec<Transformation> TRANSFORMATION_MATRIX_CODEC =
       RecordCodecBuilder.create(instance -> instance
@@ -110,21 +124,6 @@ public class RenderUtil {
           .apply(instance, Transformation::new));
 
   public static final int FULL_LIGHT = 0xF000F0;
-
-    private static float eulerX(Quaternionf q) {
-    var v = q.getEulerAnglesXYZ(new Vector3f());
-    return v.x;
-  }
-
-  private static float eulerY(Quaternionf q) {
-    var v = q.getEulerAnglesXYZ(new Vector3f());
-    return v.y;
-  }
-
-  private static float eulerZ(Quaternionf q) {
-    var v = q.getEulerAnglesXYZ(new Vector3f());
-    return v.z;
-  }
 
   private static final Minecraft minecraft = Minecraft.getInstance();
 

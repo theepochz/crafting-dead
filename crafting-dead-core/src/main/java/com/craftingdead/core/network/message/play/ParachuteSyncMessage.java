@@ -38,7 +38,7 @@ public record ParachuteSyncMessage(int entityId, boolean hasParachute) {
     return new ParachuteSyncMessage(buf.readInt(), buf.readBoolean());
   }
 
-  public static void handle(ParachuteSyncMessage packet, CustomPayloadEvent.Context ctx) {
+  public static boolean handle(ParachuteSyncMessage packet, CustomPayloadEvent.Context ctx) {
     ctx.enqueueWork(() -> {
       assert Minecraft.getInstance().level != null;
       Entity entity = Minecraft.getInstance().level.getEntity(packet.entityId());
@@ -50,6 +50,6 @@ public record ParachuteSyncMessage(int entityId, boolean hasParachute) {
         }
       }
     });
-    ctx.setPacketHandled(true);
+    return true;
   }
 }
