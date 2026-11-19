@@ -888,6 +888,8 @@ public abstract class AbstractGun implements Gun, INBTSerializable<CompoundTag> 
     // Without this the change is never pushed to clients nor flagged for the
     // equipment sync, so a freshly installed attachment would silently be dropped.
     this.attachmentsDirty = true;
+    org.slf4j.LoggerFactory.getLogger("CD-DBG")
+        .info("setAttachments: {} -> {}", this.attachments.size(), newAttachments.size());
   }
 
   @Override
@@ -1004,12 +1006,14 @@ public abstract class AbstractGun implements Gun, INBTSerializable<CompoundTag> 
     return this.itemStack;
   }
 
-    @Override
+  @Override
   public CompoundTag serializeNBT(HolderLookup.Provider provider) {
     var tag = new CompoundTag();
     if (!this.initialized) {
       return tag;
     }
+    org.slf4j.LoggerFactory.getLogger("CD-DBG")
+        .info("serializeNBT: attachments={}", this.attachments.keySet());
     tag.putString("ammoProviderType", this.ammoProvider.getType().getRegistryName().toString());
     tag.put("ammoProvider", this.ammoProvider.serializeNBT(provider));
     var attachmentsTag = this.attachments.values().stream()
@@ -1026,7 +1030,7 @@ public abstract class AbstractGun implements Gun, INBTSerializable<CompoundTag> 
     return tag;
   }
 
-    @Override
+  @Override
   public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
     if (tag.contains("ammoProviderType", Tag.TAG_STRING)) {
       this.setAmmoProvider(AmmoProviderTypes.registry.get().getValue(

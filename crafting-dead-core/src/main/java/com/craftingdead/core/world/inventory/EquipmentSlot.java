@@ -54,7 +54,30 @@ public class EquipmentSlot extends Slot {
   }
 
   @Override
+  public void setByPlayer(@Nonnull ItemStack stack, @Nonnull ItemStack previousStack) {
+    // Diagnostic: any non-sync write to an equipment slot is logged with both stacks'
+    // attachment state so we can catch the authoritative server stack being replaced.
+    if (this.slot == Equipment.Slot.GUN) {
+      var log = org.slf4j.LoggerFactory.getLogger("CD-DBG");
+      var oldAtt = previousStack.getCapability(com.craftingdead.core.world.item.gun.Gun.CAPABILITY)
+          .map(g -> g.getAttachments().keySet().toString()).orElse("nocap");
+      var newAtt = stack.getCapability(com.craftingdead.core.world.item.gun.Gun.CAPABILITY)
+          .map(g -> g.getAttachments().keySet().toString()).orElse("nocap");
+      log.info("GunSlot.setByPlayer: prev atts={} new atts={} newStack={}",
+          oldAtt, newAtt, stack.getItem());
+    }
+    super.setByPlayer(stack, previousStack);
+  }
+
+  @Override
   public void set(@Nonnull ItemStack stack) {
+    // Diagnostic: distinguish menu-sync writes (initializeContents) from player writes.
+    if (this.slot == Equipment.Slot.GUN) {
+      var log = org.slf4j.LoggerFactory.getLogger("CD-DBG");
+      var newAtt = stack.getCapability(com.craftingdead.core.world.item.gun.Gun.CAPABILITY)
+          .map(g -> g.getAttachments().keySet().toString()).orElse("nocap");
+      log.info("GunSlot.set (sync/other): new atts={} stack={}", newAtt, stack.getItem());
+    }
     this.living.setItemInSlot(this.slot, stack);
     this.setChanged();
   }

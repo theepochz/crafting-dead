@@ -69,6 +69,7 @@ import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.resources.ResourceLocation;
@@ -515,6 +516,21 @@ public class GunRenderer implements CombatSlotItemRenderer {
   protected final void renderBakedModel(BakedModel bakedModel, boolean foil, int colour,
       ItemDisplayContext transformType, PoseStack poseStack,
       MultiBufferSource renderTypeBuffer, int packedLight, int packedOverlay) {
+    this.renderBakedModel(bakedModel, foil, colour, transformType, poseStack, renderTypeBuffer,
+        packedLight, packedOverlay, null);
+  }
+
+  /**
+   * @param spriteOverride when non-null, every quad is re-bound to this sprite. Child models
+   *        (magazines, iron sights) only reference {@code #gun} and declare no textures of
+   *        their own - that reference used to be resolved at bake time by Forge, which no
+   *        longer exists in 1.21. Without this the quads fall back to {@code missingno}
+   *        (black/pink checkerboard).
+   */
+  protected final void renderBakedModel(BakedModel bakedModel, boolean foil, int colour,
+      ItemDisplayContext transformType, PoseStack poseStack,
+      MultiBufferSource renderTypeBuffer, int packedLight, int packedOverlay,
+      @Nullable TextureAtlasSprite spriteOverride) {
     poseStack.pushPose();
     {
       // Models rendered through this path are either the gun itself (whose item
@@ -528,6 +544,9 @@ public class GunRenderer implements CombatSlotItemRenderer {
       var bakedQuads = bakedModel.getQuads(null, null, random);
       var pose = poseStack.last();
       for (var bakedQuad : bakedQuads) {
+        if (spriteOverride != null) {
+          bakedQuad = remapQuadSprite(bakedQuad, spriteOverride);
+        }
         var red = (colour >> 16 & 255) / 255.0F;
         var green = (colour >> 8 & 255) / 255.0F;
         var blue = (colour & 255) / 255.0F;
@@ -536,6 +555,48 @@ public class GunRenderer implements CombatSlotItemRenderer {
       }
     }
     poseStack.popPose();
+  }
+
+  /**
+   * Resolves the sprite that child models should use: the gun's skin texture when one is
+   * applied, otherwise the gun's own texture.
+   */
+  private TextureAtlasSprite getGunSprite(@Nullable ResourceLocation skinTextureLocation) {
+    return skinTextureLocation == null
+        ? this.getGunRenderMaterial().sprite()
+        : new Material(InventoryMenu.BLOCK_ATLAS, skinTextureLocation).sprite();
+  }
+
+  /**
+   * Re-binds a baked quad to a different sprite. The vertex data holds UVs in normalized
+   * atlas coordinates, so they are inverse-mapped through the old sprite (usually
+   * {@code missingno}) back to 0..1 face space and then re-projected onto the target
+   * sprite.
+   */
+  private static net.minecraft.client.renderer.block.model.BakedQuad remapQuadSprite(
+      net.minecraft.client.renderer.block.model.BakedQuad quad,
+      TextureAtlasSprite target) {
+    var old = quad.getSprite();
+    if (old == target || old.getU1() - old.getU0() == 0.0F
+        || old.getV1() - old.getV0() == 0.0F) {
+      return quad;
+    }
+    var vertices = quad.getVertices().clone();
+    final int vertexIntSize = 8;
+    final int uvIndex = 4;
+    for (int v = 0; v < 4; v++) {
+      int base = v * vertexIntSize + uvIndex;
+      float u = Float.intBitsToFloat(vertices[base]);
+      float vCoord = Float.intBitsToFloat(vertices[base + 1]);
+      // Back to 0..1 face space through the old sprite's atlas footprint.
+      float localU = (u - old.getU0()) / (old.getU1() - old.getU0());
+      float localV = (vCoord - old.getV0()) / (old.getV1() - old.getV0());
+      vertices[base] = Float.floatToRawIntBits(target.getU(localU));
+      vertices[base + 1] = Float.floatToRawIntBits(target.getV(localV));
+    }
+    return new net.minecraft.client.renderer.block.model.BakedQuad(
+        vertices, quad.getTintIndex(), quad.getDirection(), target,
+        quad.isShade(), quad.hasAmbientOcclusion());
   }
 
   private BakedModel getBakedModel(ResourceLocation modelLocation,
@@ -565,12 +626,9 @@ public class GunRenderer implements CombatSlotItemRenderer {
       for (var ironSight : this.properties.ironSights()) {
         poseStack0Push(matrixStack, ironSight.getSecond());
         {
-          var bakedModel = this.getBakedModel(ironSight.getFirst(),
-              Map.of(GUN_TEXTURE_REFERENCE, Either.left(skinTextureLocation == null
-                  ? this.getGunRenderMaterial()
-                  : new Material(InventoryMenu.BLOCK_ATLAS, skinTextureLocation))));
+          var bakedModel = this.getBakedModel(ironSight.getFirst(), null);
           this.renderBakedModel(bakedModel, foil, colour, ItemDisplayContext.NONE, matrixStack,
-              renderTypeBuffer, packedLight, packedOverlay);
+              renderTypeBuffer, packedLight, packedOverlay, this.getGunSprite(skinTextureLocation));
         }
         matrixStack.popPose();
       }
@@ -610,16 +668,13 @@ public class GunRenderer implements CombatSlotItemRenderer {
     {
       var modelLocation = getMagazineModelLocation(magazineStack.getItem().builtInRegistryHolder().key().location());
 
-      var magazineBakedModel = this.getBakedModel(modelLocation,
-          Map.of(GUN_TEXTURE_REFERENCE, Either.left(skinTextureLocation == null
-              ? this.getGunRenderMaterial()
-              : new Material(InventoryMenu.BLOCK_ATLAS, skinTextureLocation))));
+      var magazineBakedModel = this.getBakedModel(modelLocation, null);
 
       // The magazine model is positioned in the gun's model space, which is already
       // transformed by the gun's item transform. Passing ItemDisplayContext.NONE keeps
       // the baked model's own transform out of the way.
       this.renderBakedModel(magazineBakedModel, foil, color, ItemDisplayContext.NONE, poseStack,
-          renderTypeBuffer, packedLight, packedOverlay);
+          renderTypeBuffer, packedLight, packedOverlay, this.getGunSprite(skinTextureLocation));
     }
     poseStack.popPose();
   }

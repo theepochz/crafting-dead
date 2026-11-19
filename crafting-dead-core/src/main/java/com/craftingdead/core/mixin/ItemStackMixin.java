@@ -30,11 +30,18 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * Forge 1.21.x dropped capability NBT persistence for ItemStacks during the data
- * component migration: {@link ItemStack#save} only encodes data components, and the
- * capability data produced by {@code IItem.getCapabilityProvider} is silently lost
- * on world save/reload. This mixin restores the pre-1.21 behaviour by piggybacking
- * the capability NBT (including gun ammo, magazines and attachments) onto the
- * serialized tag.
+ * component migration: {@link ItemStack#save} only encodes data components, and
+ * {@link ItemStack#copy}/{@link ItemStack#split} create the new stack from the
+ * component map alone - capabilities are silently dropped.
+ *
+ * <p>This mixin restores the pre-1.21 behaviour at both points:
+ * <ul>
+ * <li>{@code save}/{@code parse} - capability data (gun ammo, magazines, attachments)
+ * is piggybacked onto the serialized tag so it survives world saves;</li>
+ * <li>{@code copy}/{@code split}/{@code copyAndClear} - capability data is transferred
+ * to the new stack so moving an item through container menus, dropping/picking it up
+ * or hotbar swaps do not erase it.</li>
+ * </ul>
  */
 @Mixin(ItemStack.class)
 public class ItemStackMixin {
@@ -65,5 +72,86 @@ public class ItemStackMixin {
     ((CapabilityProviderAccessor) (Object) stack)
         .craftingdead$deserializeCaps(provider, compound.getCompound(craftingdead$CAPS_KEY));
     cir.setReturnValue(java.util.Optional.of(stack));
+  }
+
+  @Inject(method = "copy()Lnet/minecraft/world/item/ItemStack;", at = @At("RETURN"))
+  private void craftingdead$copyCaps(CallbackInfoReturnable<ItemStack> cir) {
+    ItemStack newStack = cir.getReturnValue();
+    if (newStack.isEmpty()) {
+      return;
+    }
+    var provider = craftingdead$lookupProvider();
+    if (provider == null) {
+      // No registry access available (e.g. main menu) - nothing meaningful to serialize.
+      return;
+    }
+    CompoundTag caps = ((CapabilityProviderAccessor) (Object) (ItemStack) (Object) this)
+        .craftingdead$serializeCaps(provider);
+    if (caps != null && !caps.isEmpty()) {
+      ((CapabilityProviderAccessor) (Object) newStack)
+          .craftingdead$deserializeCaps(provider, caps);
+    }
+  }
+
+  @Inject(method = "split(I)Lnet/minecraft/world/item/ItemStack;", at = @At("RETURN"))
+  private void craftingdead$splitCaps(int count, CallbackInfoReturnable<ItemStack> cir) {
+    ItemStack newStack = cir.getReturnValue();
+    if (newStack.isEmpty()) {
+      return;
+    }
+    var provider = craftingdead$lookupProvider();
+    if (provider == null) {
+      return;
+    }
+    CompoundTag caps = ((CapabilityProviderAccessor) (Object) (ItemStack) (Object) this)
+        .craftingdead$serializeCaps(provider);
+    if (caps != null && !caps.isEmpty()) {
+      ((CapabilityProviderAccessor) (Object) newStack)
+          .craftingdead$deserializeCaps(provider, caps);
+    }
+  }
+
+  @Inject(method = "copyAndClear()Lnet/minecraft/world/item/ItemStack;", at = @At("RETURN"))
+  private void craftingdead$copyAndClearCaps(CallbackInfoReturnable<ItemStack> cir) {
+    ItemStack newStack = cir.getReturnValue();
+    if (newStack.isEmpty()) {
+      return;
+    }
+    var provider = craftingdead$lookupProvider();
+    if (provider == null) {
+      return;
+    }
+    CompoundTag caps = ((CapabilityProviderAccessor) (Object) (ItemStack) (Object) this)
+        .craftingdead$serializeCaps(provider);
+    if (caps != null && !caps.isEmpty()) {
+      ((CapabilityProviderAccessor) (Object) newStack)
+          .craftingdead$deserializeCaps(provider, caps);
+    }
+  }
+
+  /**
+   * Resolves a registry lookup provider for capability serialization. Common code
+   * cannot reference client classes, so the client side is resolved reflectively.
+   */
+  private static HolderLookup.Provider craftingdead$lookupProvider() {
+    try {
+      var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+      if (server != null) {
+        return server.registryAccess();
+      }
+    } catch (Throwable ignored) {
+      // Not on the server side.
+    }
+    try {
+      var mcClass = Class.forName("net.minecraft.client.Minecraft");
+      var mc = mcClass.getMethod("getInstance").invoke(null);
+      var level = mcClass.getField("level").get(mc);
+      if (level != null) {
+        return ((net.minecraft.world.level.Level) level).registryAccess();
+      }
+    } catch (Throwable ignored) {
+      // No client level loaded.
+    }
+    return null;
   }
 }
